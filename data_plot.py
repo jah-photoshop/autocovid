@@ -75,12 +75,38 @@ def fail(message):
 output_path         = input("Enter output path   [default: plots]           : ") or "plots"
 if os.path.exists(output_path): fail("Output path already exists (%s)" % (output_path))
 os.mkdir(output_path)
+os.mkdir(output_path + os.path.sep + 'temp')
 
 cases_filename   = input("Enter data filename [default: data/england.csv]: ") or "data/england.csv"
 
 if not os.path.isfile(cases_filename): fail("Combined data file not found (%s)" % (cases_filename))
 
 
+#Background image is merged with each output frame using convert (imagemagick)
+background_filename   = input("Background image filename [default: bg.png]    : ") or "bg.png"
+if not os.path.isfile(background_filename): fail("Background image file not found (%s)" % (background_filename))
+
+annotate_events_r     = input("Annotate timeline events [default: yes]        : ") or "yes"
+annotate_events = False
+if annotate_events_r.startswith('y'): annotate_events = True
+
+event_dates = []
+event_strings = []
+
+if(annotate_events):
+    annotate_filename =     input("Annotations .CSV filename [default: events.csv]: ") or "events.csv"
+    if not os.path.isfile(annotate_filename): fail("Events file not found (%s)" % (annotate_filename))
+    events_data = read_file(annotate_filename)
+    for count, line in enumerate(events_data):
+        try:
+            e_date = datetime.strptime(line[0],"%Y-%m-%d")
+            event_dates.append(e_date)
+            event_strings.append(line[1])
+        except:
+            print("Error on line %d:%s" % (count,line))
+            
+            
+            
 #Background image is merged with each output frame using convert (imagemagick)
 background_filename   = input("Background image filename [default: bg.png]    : ") or "bg.png"
 if not os.path.isfile(background_filename): fail("Background image file not found (%s)" % (background_filename))
@@ -94,12 +120,14 @@ end_date = start_date
 def annotate_picture(filename,list_of_annotations):
     annotate_string = "convert %s -gravity SouthEast -pointsize 23 " % filename
     for annotation in list_of_annotations:
+        cs = "'#EEEE'"
+        if(annotation[5]): cs = "'#BBBB'"
         if(annotation[3]):  #Right justified for numerical entries
-            sub_string =  " -gravity SouthEast -pointsize 23 -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[0],annotation[1],annotation[2])
-            sub_string += "-stroke none -fill white -annotate +%d+%d '%s' " % (annotation[0],annotation[1],annotation[2])
+            sub_string =  " -gravity SouthEast -pointsize %d -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
+            sub_string += "-stroke none -fill %s -annotate +%d+%d '%s' " % (cs,annotation[0],annotation[1],annotation[2])
         else:
-            sub_string =  " -gravity SouthWest -pointsize 44 -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[0],annotation[1],annotation[2])
-            sub_string += "-stroke none -fill white -annotate +%d+%d '%s' " % (annotation[0],annotation[1],annotation[2])           
+            sub_string =  " -gravity SouthWest -pointsize %d -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
+            sub_string += "-stroke none -fill %s -annotate +%d+%d '%s' " % (cs,annotation[0],annotation[1],annotation[2])           
         annotate_string += sub_string
     annotate_string += filename
     #print(annotate_string)
@@ -183,13 +211,9 @@ for day in range(no_days):
         plt.bar(post_dates,post_cases,width=0.6,color=i_bar_col,edgecolor=i_edge_col,linewidth=0.72)
         plt.plot(post_dates,post_avs,color=i_line_col,linewidth=6)
         plt.axvline(x=c_day-timedelta(hours=16), color="#552255", ls=':', lw=3)
-        #plt.text(start_date+timedelta(days=80),c_max*0.87, "Daily Figure:", horizontalalignment='left', fontsize=34)
-        #plt.text(start_date+timedelta(days=80),c_max*0.70,"7-day Average:", horizontalalignment='left', fontsize=34)
-        #plt.text(start_date+timedelta(days=120),c_max*0.87, "%d" % int(pre_cases[0]), horizontalalignment='right', fontsize=34,weight='bold')
-        #plt.text(start_date+timedelta(days=120),c_max*0.70,"%d" % int(pre_avs[0]), horizontalalignment='right', fontsize=34,weight='bold')
-        annotation_list.append([1220,880 - (c_c * 174),"%d" % int(pre_cases[0]),True])
-        annotation_list.append([990,880 - (c_c * 174),"%d" % int(pre_avs[0]),True])        
-        ofn = output_path + chart + ".png"
+        annotation_list.append([1220,880 - (c_c * 174),"%d" % int(pre_cases[0]),True,23,False])
+        annotation_list.append([990,880 - (c_c * 174),"%d" % int(pre_avs[0]),True,23,False])        
+        ofn = output_path + os.path.sep + "temp" + os.path.sep + chart + ".png"
         ofn_list.append(ofn)
         plt.savefig(ofn, bbox_inches='tight',transparent=True)
         f.clf()
@@ -202,46 +226,23 @@ for day in range(no_days):
     for count,figfn in enumerate(ofn_list):
         os.system('composite -geometry +30+%d %s %s %s' % (200 + (count * 174),figfn,frame_name,frame_name))
     print("Annotating images")
-
-    annotation_list.append([30,940,c_day.strftime("%a %d %b"),False])
-    
-    annotate_picture(frame_name,annotation_list)
+    annotation_list.append([30,940,c_day.strftime("%a %d %b"),False,48,False])
+    if(annotate_events):
+        draw_event = False
+        date_string = ""
+        e_string = ""
+        fade = False
+        for count,edate in enumerate(event_dates):
+            date_delta = c_day - edate
+            if(date_delta.days >= 0 and date_delta.days < 3):
+                if(date_delta.days > 0):
+                    fade = True
+                draw_event = True
+                date_string = edate.strftime("%d %b")
+                e_string = event_strings[count]
+        if(draw_event):
+            annotation_list.append([330,976,date_string,False,18,fade])
+            annotation_list.append([330,940,e_string,False,32,fade])
         
-#Generate plot
-#plt.figure(figsize=(11,14),frameon=False)
- #f=plt.figure(figsize=(12,14),dpi=113.72,frameon=False) 
-#plt.axis([133000,658000,10600,655000])
-#plt.text(550000,595000,title_string, horizontalalignment='center',fontsize=26)
-#Version 1.3: Added optional daily update to date string
-# if(daily_update):
-#     s_date = datetime(2020,2,4)
-#     s_date += timedelta(days = ((7 * (week - 1)) + int( (7.0 * frame) / frames_per_week)))
-#     date_string = s_date.strftime("%B %d") #Format date to [Month Day] eg September 22
-#plt.text(550000,576000,date_string, horizontalalignment='center', style='italic',fontsize=15)
-#plt.axis('off')
- 
-#Create filenames
-#sfn = "frame%04d.png" % (frame_count)
-#ofn = overlay_path + os.path.sep + sfn
-#rfn = merged_path + os.path.sep + sfn
-#Save the plot as transparent PNG (tight bounding box removes most of border)
-#plt.savefig(ofn, bbox_inches='tight')
-#Add the new outbreaks to the list of historical outbreaks for future frames
-#historical_outbreaks.extend(frame_outbreaks)
-#Call convert (from imagemagick package) to create composite of background and new image
-#os.system('convert %s %s -composite +antialias %s' % (background_filename,ofn,rfn))
-#Clear the figure
-#plt.close(f)
-#             
-##Create two seconds worth of duplicate frames at the end of the sequency 
-#print("Standard frames completed, duplicating final frame")
-#for i in range(framerate * 2):
-#     nsfn = "frame%04d.png" % (frame_count + i + 1)
-#     os.system('cp %s %s' % (rfn,merged_path + os.path.sep + nsfn))
-#print("Generating video using FFMPEG...")
-#ffmpeg_line = ("ffmpeg -framerate %d -pattern_type glob -i '" % (framerate)) + merged_path + os.path.sep+ "*.png' -c:v libx264 -r 30 -pix_fmt yuv420p "+output_path+os.path.sep+"out.mp4"
-#print(ffmpeg_line)
-#os.system(ffmpeg_line)        
-#
-#
-#             
+    annotate_picture(frame_name,annotation_list)
+     
