@@ -1,6 +1,8 @@
 # Custom
 output/
 data/
+plots/
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
