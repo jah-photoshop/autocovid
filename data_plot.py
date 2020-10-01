@@ -40,8 +40,7 @@ print("")
 #Some parameters that may want to be tweaked...
 debug = False            # Set to True to print extended debug information whilst processing
 
-start_date = datetime(2020,8,1)
-surpress_days = timedelta(days=3)
+surpress_days = timedelta(days=2)
 plt.rcParams.update({'font.size': 26})
 plt.rcParams.update({'axes.linewidth': 0})
 
@@ -111,17 +110,25 @@ if(annotate_events):
 background_filename   = input("Background image filename [default: bg.png]    : ") or "bg.png"
 if not os.path.isfile(background_filename): fail("Background image file not found (%s)" % (background_filename))
 
+            
+start_date_str   =      input("Start date for output [default: 2020-03-01]    : ") or "2020-03-01"
+start_date = datetime.strptime(start_date_str,"%Y-%m-%d")
+if not os.path.isfile(background_filename): fail("Background image file not found (%s)" % (background_filename))
+
+
 
 data = read_file(cases_filename)
 
 dates = []
+#start_date = datetime(2020,8,1)
+
 end_date = start_date
 
 def annotate_picture(filename,list_of_annotations):
     annotate_string = "convert %s -gravity SouthEast -pointsize 23 " % filename
     for annotation in list_of_annotations:
         cs = "'#EEEE'"
-        if(annotation[5]): cs = "'#BBBB'"
+        if(annotation[5]): cs = "'#CCCC'"
         if(annotation[3]):  #Right justified for numerical entries
             sub_string =  " -gravity SouthEast -pointsize %d -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
             sub_string += "-stroke none -fill %s -annotate +%d+%d '%s' " % (cs,annotation[0],annotation[1],annotation[2])
@@ -151,6 +158,8 @@ for count,line in enumerate(data):
             dates.append(e_date)
         except:
             print("Error on line %d:%s" % (count,line))
+            
+            
             
 #print(dates)
 #print(cases)
