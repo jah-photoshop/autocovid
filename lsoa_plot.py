@@ -51,8 +51,8 @@ print("")
 
 #Some parameters that may want to be tweaked...
 debug = False               # Set to True to print extended debug information whilst processing
-size_factor = 8             # The size of the dots.  Bigger number, bigger dots.
-dot_out_colour = "#ff8800"  # The RGB colour of the new outbreak dots.         Bright Red="#ff0000"
+size_factor = 10             # The size of the dots.  Bigger number, bigger dots.
+dot_out_colour = "#ff5500"  # The RGB colour of the new outbreak dots.         Bright Red="#ff0000"
 dot_new_colour = "#ee4400"  # The RGB colour of the new outbreak dots.         Bright Red="#ff0000"
 dot_his_colour = "#dd3A00"  # The RGB colour of the historical outbreak dots.  Deeper Red="#dd0000"
 weekly_decay = 0.5          # The factor which dot size reduces each week 
@@ -251,7 +251,7 @@ for week in range(number_of_weeks):
              plt.axis([133000,658000,10600,655000])
              #plt.text(550000,595000,title_string, horizontalalignment='center',fontsize=26)
              #Version 1.3: Added optional daily update to date string
-             s_date = datetime(2020,2,4)
+             s_date = datetime(2020,2,3)
              s_date += timedelta(days = ((7 * (week - 1)) + int( float(frame) / frames_per_day)))
              date_string = s_date.strftime("%B %d") #Format date to [Month Day] eg September 22
              #plt.text(550000,576000,date_string, horizontalalignment='center', style='italic',fontsize=15)

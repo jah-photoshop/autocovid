@@ -40,7 +40,7 @@ print("")
 #Some parameters that may want to be tweaked...
 debug = False            # Set to True to print extended debug information whilst processing
 
-surpress_days = timedelta(days=1)
+surpress_days = timedelta(days=3)
 plt.rcParams.update({'font.size': 26})
 plt.rcParams.update({'axes.linewidth': 0})
 
@@ -69,6 +69,32 @@ def fail(message):
     print("There has been an error:")
     print(message)
     sys.exit()
+    
+def annotate_picture(filename,list_of_annotations):
+    annotate_string = "convert %s -gravity SouthEast -pointsize 23 " % filename
+    for annotation in list_of_annotations:
+        cs = "'#EEEE'"
+        if(annotation[5]): cs = "'#CCCC'"
+        if(annotation[3]):  #Right justified for numerical entries
+            sub_string =  " -gravity SouthEast -pointsize %d -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
+            sub_string += "-stroke none -fill %s -annotate +%d+%d '%s' " % (cs,annotation[0],annotation[1],annotation[2])
+        else:
+            sub_string =  " -gravity SouthWest -pointsize %d -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
+            sub_string += "-stroke none -fill %s -annotate +%d+%d '%s' " % (cs,annotation[0],annotation[1],annotation[2])           
+        annotate_string += sub_string
+    annotate_string += filename
+    #print(annotate_string)
+    os.system(annotate_string)
+        
+def get_ra(list_in):
+    ra = []
+    for count,entry in enumerate(list_in):
+        cra = 0
+        for k in range(7):
+            if count + k < len(list_in): cra += list_in[count+k]
+        dra = cra / 7.0
+        ra.append(dra)
+    return ra
 
 #Create output paths
 output_path         = input("Enter output path   [default: plots]           : ") or "plots"
@@ -104,13 +130,27 @@ if(annotate_events):
         except:
             print("Error on line %d:%s" % (count,line))
             
-            
-            
-#Background image is merged with each output frame using convert (imagemagick)
-background_filename   = input("Background image filename [default: bg.png]    : ") or "bg.png"
-if not os.path.isfile(background_filename): fail("Background image file not found (%s)" % (background_filename))
 
-            
+shade_regions_r     = input("Shade regions by case rate [default: yes]      : ") or "yes"
+shade_regions = False
+if shade_regions_r.startswith('y'): shade_regions = True
+
+regions = ['northwest','northeast','yorkshire','westmidlands','eastmidlands','east','southwest','southeast','london']
+region_rates = []
+region_dates = []
+if(shade_regions):
+    for count, region in enumerate(regions):
+        region_date = []
+        reg_fn = "data" + os.path.sep + region + '.csv'
+        region_data = read_file(reg_fn)[1:]
+        region_cases = [int(el[1]) for el in region_data]
+        region_dates.append([datetime.strptime(el[0], "%Y-%m-%d") for el in region_data] )
+        region_cases_av = get_ra(region_cases)
+        region_pop = int(region_data[0][2]) / float(region_data[0][3]) #Population [in 100Ks]
+        region_rate = [(7.0 * el) / region_pop for el in region_cases_av]        
+        region_rates.append(region_rate)
+        print ("%s: Max: %f" % (region,max(region_rate)))
+    
 start_date_str   =      input("Start date for output [default: 2020-03-01]    : ") or "2020-03-01"
 start_date = datetime.strptime(start_date_str,"%Y-%m-%d")
 if not os.path.isfile(background_filename): fail("Background image file not found (%s)" % (background_filename))
@@ -124,31 +164,6 @@ dates = []
 
 end_date = start_date
 
-def annotate_picture(filename,list_of_annotations):
-    annotate_string = "convert %s -gravity SouthEast -pointsize 23 " % filename
-    for annotation in list_of_annotations:
-        cs = "'#EEEE'"
-        if(annotation[5]): cs = "'#CCCC'"
-        if(annotation[3]):  #Right justified for numerical entries
-            sub_string =  " -gravity SouthEast -pointsize %d -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
-            sub_string += "-stroke none -fill %s -annotate +%d+%d '%s' " % (cs,annotation[0],annotation[1],annotation[2])
-        else:
-            sub_string =  " -gravity SouthWest -pointsize %d -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
-            sub_string += "-stroke none -fill %s -annotate +%d+%d '%s' " % (cs,annotation[0],annotation[1],annotation[2])           
-        annotate_string += sub_string
-    annotate_string += filename
-    #print(annotate_string)
-    os.system(annotate_string)
-        
-def get_ra(list_in):
-    ra = []
-    for count,entry in enumerate(list_in):
-        cra = 0
-        for k in range(7):
-            if count + k < len(list_in): cra += list_in[count+k]
-        dra = cra / 7.0
-        ra.append(dra)
-    return ra
 
 for count,line in enumerate(data):
     if count > 0:
@@ -206,7 +221,7 @@ for day in range(no_days):
                 post_cases.append(cases[count])
                 post_dates.append(entry)
                 post_avs.append(avs[count])
-        plt.axis([start_date-timedelta(hours=36),end_date-surpress_days+timedelta(hours=12),0,c_max*1.02])
+        plt.axis([start_date-timedelta(hours=36),end_date-surpress_days-timedelta(hours=12),0,c_max*1.02])
         ax=plt.gca()
         pad_w= -10 - ( len("%d" % c_max) * 14)
         ax.tick_params(axis="y", direction="in", pad=pad_w)
@@ -254,4 +269,19 @@ for day in range(no_days):
             annotation_list.append([330,940,e_string,False,32,fade])
         
     annotate_picture(frame_name,annotation_list)
-     
+    if(shade_regions):
+        print("Shading regional data")
+        for count,region in enumerate(regions): 
+            rate = 0
+            if c_day in region_dates[count]:
+                date_index = region_dates[count].index(c_day)
+#            print("Date index:%d" % (date_index))
+#            print(region_rates[count])
+#            print(len(region_rates[count]))
+#            print(region_dates)
+#            print(len(region_dates))
+                rate = region_rates[count][date_index]
+            if(rate > 100):rate=100
+            if(rate < 0): rate = 0
+            region_filename="regions" + os.path.sep + region + ".png"
+            os.system('composite -dissolve %f -geometry +985+26 %s %s %s' % (rate,region_filename,frame_name,frame_name))
