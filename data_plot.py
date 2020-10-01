@@ -40,7 +40,7 @@ print("")
 #Some parameters that may want to be tweaked...
 debug = False            # Set to True to print extended debug information whilst processing
 
-surpress_days = timedelta(days=2)
+surpress_days = timedelta(days=1)
 plt.rcParams.update({'font.size': 26})
 plt.rcParams.update({'axes.linewidth': 0})
 
