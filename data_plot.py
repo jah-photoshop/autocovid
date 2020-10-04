@@ -39,6 +39,7 @@ print("")
 
 #Some parameters that may want to be tweaked...
 debug = False            # Set to True to print extended debug information whilst processing
+plot_region_stats = True # Set to True to include regional statistics legend on map
 
 surpress_days = timedelta(days=3)
 plt.rcParams.update({'font.size': 26})
@@ -74,12 +75,13 @@ def annotate_picture(filename,list_of_annotations):
     annotate_string = "convert %s -gravity SouthEast -pointsize 23 " % filename
     for annotation in list_of_annotations:
         cs = "'#EEEE'"
-        if(annotation[5]): cs = "'#CCCC'"
+        if(annotation[5]): cs = "'#DDDD'"
+        if(annotation[6]): cs = "'#888C'"
         if(annotation[3]):  #Right justified for numerical entries
-            sub_string =  " -gravity SouthEast -pointsize %d -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
+            sub_string =  " -gravity SouthEast -font FreeMono-Bold -pointsize %d -stroke '#222C' -strokewidth 1 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
             sub_string += "-stroke none -fill %s -annotate +%d+%d '%s' " % (cs,annotation[0],annotation[1],annotation[2])
         else:
-            sub_string =  " -gravity SouthWest -pointsize %d -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
+            sub_string =  " -gravity SouthWest -font Lato-Bold -pointsize %d -stroke '#000C' -strokewidth 2 -annotate +%d+%d '%s' " % (annotation[4],annotation[0],annotation[1],annotation[2])
             sub_string += "-stroke none -fill %s -annotate +%d+%d '%s' " % (cs,annotation[0],annotation[1],annotation[2])           
         annotate_string += sub_string
     annotate_string += filename
@@ -135,7 +137,9 @@ shade_regions_r     = input("Shade regions by case rate [default: yes]      : ")
 shade_regions = False
 if shade_regions_r.startswith('y'): shade_regions = True
 
+
 regions = ['northwest','northeast','yorkshire','westmidlands','eastmidlands','east','southwest','southeast','london']
+#regions_format = ['North West','North East','Yorkshire and Humberi','West Midlands','East Midlands','East of England','South West','South East','London']
 region_rates = []
 region_dates = []
 if(shade_regions):
@@ -151,7 +155,7 @@ if(shade_regions):
         region_rates.append(region_rate)
         print ("%s: Max: %f" % (region,max(region_rate)))
     
-start_date_str   =      input("Start date for output [default: 2020-03-01]    : ") or "2020-03-01"
+start_date_str   =      input("Start date for output [default: 2020-03-04]    : ") or "2020-03-04"
 start_date = datetime.strptime(start_date_str,"%Y-%m-%d")
 if not os.path.isfile(background_filename): fail("Background image file not found (%s)" % (background_filename))
 
@@ -221,7 +225,7 @@ for day in range(no_days):
                 post_cases.append(cases[count])
                 post_dates.append(entry)
                 post_avs.append(avs[count])
-        plt.axis([start_date-timedelta(hours=36),end_date-surpress_days-timedelta(hours=12),0,c_max*1.02])
+        plt.axis([start_date-timedelta(hours=36),end_date-surpress_days-timedelta(hours=30),0,c_max*1.02])
         ax=plt.gca()
         pad_w= -10 - ( len("%d" % c_max) * 14)
         ax.tick_params(axis="y", direction="in", pad=pad_w)
@@ -235,8 +239,8 @@ for day in range(no_days):
         plt.bar(post_dates,post_cases,width=0.6,color=i_bar_col,edgecolor=i_edge_col,linewidth=0.72)
         plt.plot(post_dates,post_avs,color=i_line_col,linewidth=6)
         plt.axvline(x=c_day-timedelta(hours=16), color="#552255", ls=':', lw=3)
-        annotation_list.append([1220,880 - (c_c * 174),"%d" % int(pre_cases[0]),True,23,False])
-        annotation_list.append([990,880 - (c_c * 174),"%d" % int(pre_avs[0]),True,23,False])        
+        annotation_list.append([1220,882 - (c_c * 174),"%d" % int(pre_cases[0]),True,24,False,False])
+        annotation_list.append([990,882 - (c_c * 174),"%d" % int(pre_avs[0]),True,24,False,False])        
         ofn = output_path + os.path.sep + "temp" + os.path.sep + chart + ".png"
         ofn_list.append(ofn)
         plt.savefig(ofn, bbox_inches='tight',transparent=True)
@@ -250,14 +254,15 @@ for day in range(no_days):
     for count,figfn in enumerate(ofn_list):
         os.system('composite -geometry +30+%d %s %s %s' % (200 + (count * 174),figfn,frame_name,frame_name))
     print("Annotating images")
-    annotation_list.append([30,940,c_day.strftime("%a %d %b"),False,48,False])
+    x_day = c_day - timedelta(days=1)
+    annotation_list.append([34,940,x_day.strftime("%a %d %b"),False,48,False,False])
     if(annotate_events):
         draw_event = False
         date_string = ""
         e_string = ""
         fade = False
         for count,edate in enumerate(event_dates):
-            date_delta = c_day - edate
+            date_delta = x_day - edate
             if(date_delta.days >= 0 and date_delta.days < 3):
                 if(date_delta.days > 0):
                     fade = True
@@ -265,23 +270,30 @@ for day in range(no_days):
                 date_string = edate.strftime("%d %b")
                 e_string = event_strings[count]
         if(draw_event):
-            annotation_list.append([330,976,date_string,False,18,fade])
-            annotation_list.append([330,940,e_string,False,32,fade])
+            annotation_list.append([340,976,date_string,False,18,fade,False])
+            annotation_list.append([340,940,e_string,False,32,fade,False])
         
     annotate_picture(frame_name,annotation_list)
     if(shade_regions):
         print("Shading regional data")
+        region_annotations = []
+        if(plot_region_stats):
+            os.system('composite -geometry +1668+30 regions/backlayer.png %s %s' % (frame_name,frame_name))
+
         for count,region in enumerate(regions): 
             rate = 0
-            if c_day in region_dates[count]:
-                date_index = region_dates[count].index(c_day)
-#            print("Date index:%d" % (date_index))
-#            print(region_rates[count])
-#            print(len(region_rates[count]))
-#            print(region_dates)
-#            print(len(region_dates))
+            if x_day in region_dates[count]:
+                date_index = region_dates[count].index(x_day)
                 rate = region_rates[count][date_index]
+                if rate is None: rate = 0
+                region_annotations.append([38,982 - (count * 24),"%3.1f" % rate,True,20,False,True])
             if(rate > 100):rate=100
             if(rate < 0): rate = 0
-            region_filename="regions" + os.path.sep + region + ".png"
+            reg_sep = ""
+            if (plot_region_stats): reg_sep = "-e"
+            region_filename="regions" + os.path.sep + region + reg_sep + ".png"
             os.system('composite -dissolve %f -geometry +985+26 %s %s %s' % (rate,region_filename,frame_name,frame_name))
+        if(plot_region_stats):
+            os.system('composite -geometry +1668+30 regions/overlay.png %s %s' % (frame_name,frame_name))
+            print("Annotating regional data")
+            annotate_picture(frame_name,region_annotations)
