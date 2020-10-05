@@ -11,36 +11,127 @@ Created on Sun Oct  4 14:16:24 2020
 print("Covid Local Data Plotter - version 1.0   -   @jah-photoshop Oct 2020")
 print("")
 
-import os,csv, numpy as np,geopandas as gpd,pandas as pd,matplotlib.pyplot as plt, random
+import os,csv, numpy as np,geopandas as gpd,pandas as pd,matplotlib.pyplot as plt, random, sys
 from datetime import datetime, timedelta
 
 debug = False
+merge_plots = True
 data_path = "data"
+output_path = "plots"
+output_subpath = output_path + os.path.sep + "maps"
+if(os.path.isdir(output_subpath)):
+    print("Output path already exists; aborting")
+    sys.exit()
+else: os.makedirs(output_subpath)
 map_filename = "zip://" + data_path + os.path.sep + "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_EW_BSC-shp.zip"
+laa_map_filename = "zip://" + data_path + os.path.sep + "Local_Authority_Districts__May_2020__UK_BUC-shp.zip"
+town_map_filename = "zip://" + data_path + os.path.sep + "Major_Towns_and_Cities__December_2015__Boundaries-shp.zip"
 msoa_filename = data_path + os.path.sep + "MSOAs_latest.csv"
 cases_filename = data_path + os.path.sep + "coronavirus-cases_latest.csv"
-
+standalone_plot = False
+plot_combined_data = True
+post_process = True
 plt.rcParams['axes.facecolor']='#121240'
+heat_lim = 16
+transparent=True
 
 #Yorkshire
 frame_margins = [340000,550000,410000,520000]
 plot_wales=False
+plot_scotland=False
 label_x=525000
 label_y=510000
 l_width=1.2
 
-#England
+#England [for combined maps]
 frame_margins = [133000,658000,10600,655000]
 plot_wales=True
+plot_scotland=True
 label_x=550000
 label_y=576000
 l_width=0.6
+post_process = True
+resize_output = True
+heat_lim = 16
+transparent = True
+add_date = False
+add_background = False
+target_width = 865
+target_height = 1060
+
+
+#SouthWest
+frame_margins = [133000,465000,10600,254000]
+plot_wales=True
+plot_scotland=False
+label_x=170000
+label_y=165000
+l_width= 3
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 10
+transparent = False
+add_date = True
+add_background = False
+target_width = 1280
+target_height = 960
+
+#North Yorkshire
+frame_margins = [340000,550000,410000,520000]
+plot_wales=False
+plot_scotland=False
+label_x=525000
+label_y=510000
+l_width=1.2
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 10
+transparent = False
+add_date = True
+add_background = False
+target_width = 1280
+target_height = 960
+
+#England [for standalone maps]
+frame_margins = [133000,658000,10600,655000]
+plot_wales=True
+plot_scotland=True
+plot_towns=True
+label_x=550000
+label_y=576000
+l_width=0.6
+post_process = True
+resize_output = True
+heat_lim = 16
+transparent = True
+add_date = True
+add_background = True
+background_file = "heatmap.png"
+target_width = 1080
+target_height = 1324
+mask_colour='#122B49'
+
+plot_laa = True
+laa_line_width = 2
 
 #Load map data for England [and Wales] from shape file
-print("Loading map data from " + map_filename)
+print("Loading MSOA map data from " + map_filename)
 england=gpd.read_file(map_filename,rows=6791)
-wales=gpd.read_file(map_filename,rows=slice(6792,7199))
+#Read wales from LAA file instead for simpler plot...
+wales=gpd.read_file(map_filename,rows=slice(6791,7199))
 msoa_names = england.MSOA11CD.to_list()
+
+print("Loading LAA map data from " + laa_map_filename)
+england_laa=gpd.read_file(laa_map_filename,rows=314)
+scotland=gpd.read_file(laa_map_filename,rows=slice(326,357))
+wales=gpd.read_file(laa_map_filename,rows=slice(357,379))
+
+print("Loading town map data from ")
+towns=gpd.read_file(town_map_filename)
+towns['centroids']=towns.centroid
+towns=towns.set_geometry('centroids')
 
 #Load MSOA weekly case data from CSV file
 print("Loading MSOA data from " + msoa_filename)
@@ -111,25 +202,32 @@ for day in range(number_of_days):
 print("Producing plots")
 def_days = 40  #Plot since 10th March
 def_days = 180 #Plot since start of August
-def_days = 30
+#def_days = 30
 for day in range(def_days,number_of_days):
     c_date = start_date + timedelta(days=day)
-    f_string = c_date.strftime("%Y%m%d.png")
+    f_string = output_subpath+os.path.sep+c_date.strftime("map-%Y%m%d.png")
     print("Creating file %s" % (f_string))
-    fig,ax = plt.subplots(figsize=(36,36),frameon=False)
+    fig,ax = plt.subplots(figsize=(36,36),frameon=not transparent)
     ax.set_aspect('equal')
     ax.axis(frame_margins)
-    plt.text(label_x,label_y,c_date.strftime("%B %d"), horizontalalignment='center', style='italic',fontsize=60)
+    if add_date: plt.text(label_x,label_y,c_date.strftime("%B %d"), horizontalalignment='center', style='italic',fontsize=60)
     plt.axis('off')
     #plt.text(550000,576000,c_date.strftime("%B %d"), horizontalalignment='center', style='italic',fontsize=48)
-    if(plot_wales):wales.plot(ax=ax,zorder=1,color='#DDDDDD')
+    if(plot_wales):wales.plot(ax=ax,zorder=1,color=mask_colour)
+    if(plot_scotland):scotland.plot(ax=ax,zorder=1,color=mask_colour)
+
     #england.boundary.plot(ax=ax,zorder=2,linewidth=0.3,color='#888888')
     england.boundary.plot(ax=ax,zorder=2,linewidth=l_width,color='#888888')
-    #england.plot(column=c_date.strftime('ltla_%m%d'),ax=ax,cmap='OrRd',vmin=0,vmax=200,zorder=3)
     #england.plot(column=c_date.strftime('msoa_%m%d'),ax=ax,cmap='autumn',vmin=3,vmax=30,zorder=4)
-    england.plot(column=c_date.strftime('comb_%m%d'),ax=ax,cmap='YlOrRd',vmin=0,vmax=16,zorder=4)
+    if(plot_combined_data):england.plot(column=c_date.strftime('comb_%m%d'),ax=ax,cmap='YlOrRd',vmin=0,vmax=heat_lim,zorder=4)
+    if(plot_laa):england_laa.boundary.plot(ax=ax,zorder=5,linewidth=laa_line_width,color='#553311')
+    if(plot_towns):towns.plot(ax=ax,zorder=6,color='#111144')
+    else:  england.plot(column=c_date.strftime('ltla_%m%d'),ax=ax,cmap='OrRd',vmin=0,vmax=200,zorder=3)
     plt.savefig(f_string, bbox_inches='tight')
-    os.system('convert %s -resize 1080x1324\! %s' % (f_string,f_string))        
-    os.system('composite %s heatmap.png %s' % (f_string,f_string))
+    if post_process:
+        if resize_output: os.system('convert %s -resize %dx%d\! %s' % (f_string,target_width,target_height,f_string))
+        #if standalone_plot: os.system('convert %s -resize 1080x1324\! %s' % (f_string,f_string)) 
+        #else: os.system('convert %s -resize 865x1060\! %s' % (f_string,f_string))            
+        if add_background: os.system('composite %s %s %s' % (f_string,background_file,f_string))
     fig.clf()    
 
