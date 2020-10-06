@@ -24,7 +24,10 @@ if(os.path.isdir(output_subpath)):
     sys.exit()
 else: os.makedirs(output_subpath)
 map_filename = "zip://" + data_path + os.path.sep + "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_EW_BSC-shp.zip"
-laa_map_filename = "zip://" + data_path + os.path.sep + "Local_Authority_Districts__May_2020__UK_BUC-shp.zip"
+#laa_map_filename = "zip://" + data_path + os.path.sep + "Local_Authority_Districts__May_2020__UK_BUC-shp.zip"
+
+laa_map_filename = "zip://" + data_path + os.path.sep + "Local_Authority_Districts__May_2020__Boundaries_UK_BGC-shp.zip"
+
 town_map_filename = "zip://" + data_path + os.path.sep + "Major_Towns_and_Cities__December_2015__Boundaries-shp.zip"
 msoa_filename = data_path + os.path.sep + "MSOAs_latest.csv"
 cases_filename = data_path + os.path.sep + "coronavirus-cases_latest.csv"
@@ -34,6 +37,7 @@ post_process = True
 plt.rcParams['axes.facecolor']='#121240'
 heat_lim = 16
 transparent=True
+add_overlay=False
 
 #Yorkshire
 frame_margins = [340000,550000,410000,520000]
@@ -77,22 +81,7 @@ add_background = False
 target_width = 1280
 target_height = 960
 
-#North Yorkshire
-frame_margins = [340000,550000,410000,520000]
-plot_wales=False
-plot_scotland=False
-label_x=525000
-label_y=510000
-l_width=1.2
-standalone_plot = True
-post_process = True
-resize_output = True
-heat_lim = 10
-transparent = False
-add_date = True
-add_background = False
-target_width = 1280
-target_height = 960
+
 
 #England [for standalone maps]
 frame_margins = [133000,658000,10600,655000]
@@ -104,7 +93,8 @@ label_y=576000
 l_width=0.6
 post_process = True
 resize_output = True
-heat_lim = 16
+heat_lim = 24
+heat_lim = 8
 transparent = True
 add_date = True
 add_background = True
@@ -114,7 +104,30 @@ target_height = 1324
 mask_colour='#122B49'
 
 plot_laa = True
+laa_line_width = 1
+
+#North Yorkshire
+frame_margins = [360000,520000,412000,520000]
+plot_wales=False
+plot_scotland=False
+plot_towns=True
+plot_laa = True
 laa_line_width = 2
+label_x=502000
+label_y=515000
+l_width=1.2
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 10
+transparent = False
+add_date = True
+add_background = False
+add_overlay = True
+overlay_filename='overlay-nyorks.png'
+target_width = 1594
+target_height = 1080
+
 
 #Load map data for England [and Wales] from shape file
 print("Loading MSOA map data from " + map_filename)
@@ -195,7 +208,8 @@ for day in range(number_of_days):
     ltla_series_title = c_date.strftime('ltla_%m%d')
     england[ltla_series_title]=ltla_series
     hist_ltla_series = pd.Series([el[day] for el in hist_msoa_data])
-    comb_series = (ltla_series + (6 * hist_ltla_series))**(1/2)
+    #comb_series = (ltla_series + (6 * hist_ltla_series))**(1/2)
+    comb_series = (ltla_series + (6 * hist_ltla_series))**(1/3)
     comb_series_title = c_date.strftime('comb_%m%d')
     england[comb_series_title]=comb_series
 
@@ -203,6 +217,8 @@ print("Producing plots")
 def_days = 40  #Plot since 10th March
 def_days = 180 #Plot since start of August
 #def_days = 30
+def_days=210
+
 for day in range(def_days,number_of_days):
     c_date = start_date + timedelta(days=day)
     f_string = output_subpath+os.path.sep+c_date.strftime("map-%Y%m%d.png")
@@ -229,5 +245,6 @@ for day in range(def_days,number_of_days):
         #if standalone_plot: os.system('convert %s -resize 1080x1324\! %s' % (f_string,f_string)) 
         #else: os.system('convert %s -resize 865x1060\! %s' % (f_string,f_string))            
         if add_background: os.system('composite %s %s %s' % (f_string,background_file,f_string))
+        if add_overlay: os.system('composite %s %s %s' % (overlay_filename, f_string,f_string))
     fig.clf()    
 
