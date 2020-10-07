@@ -11,20 +11,15 @@ Created on Sun Oct  4 14:16:24 2020
 print("Covid Local Data Plotter - version 1.0   -   @jah-photoshop Oct 2020")
 print("")
 
-import os,csv, numpy as np,geopandas as gpd,pandas as pd,matplotlib.pyplot as plt, random, sys, time
+import os,csv, numpy as np,geopandas as gpd,pandas as pd,matplotlib.pyplot as plt, random, sys, time, pickle
 from datetime import datetime, timedelta
 
 debug = False
 merge_plots = True
 overwrite_mode = True
 data_path = "data"
-output_path = "plots"
-output_subpath = output_path + os.path.sep + "maps"
-if(os.path.isdir(output_subpath)):
-    if not overwrite_mode:
-        print("Output path already exists; aborting")
-        sys.exit()
-else: os.makedirs(output_subpath)
+preset_path = "presets"
+
 map_filename = "zip://" + data_path + os.path.sep + "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_EW_BSC-shp.zip"
 #laa_map_filename = "zip://" + data_path + os.path.sep + "Local_Authority_Districts__May_2020__UK_BUC-shp.zip"
 
@@ -33,216 +28,22 @@ laa_map_filename = "zip://" + data_path + os.path.sep + "Local_Authority_Distric
 town_map_filename = "zip://" + data_path + os.path.sep + "Major_Towns_and_Cities__December_2015__Boundaries-shp.zip"
 msoa_filename = data_path + os.path.sep + "MSOAs_latest.csv"
 cases_filename = data_path + os.path.sep + "coronavirus-cases_latest.csv"
-standalone_plot = False
-plot_combined_data = True
-post_process = True
 plt.rcParams['axes.facecolor']='#121240'
-heat_lim = 16
-transparent=True
-add_overlay=False
-add_laa_labels=False
-add_title=False
-text_align_mode = 'center'
-date_font_size = 60
-title_font_size = 40
-add_footer = False
 
-#Yorkshire
-frame_margins = [340000,550000,410000,520000]
-plot_wales=False
-plot_scotland=False
-label_x=525000
-label_y=510000
-laa_linewidth=1.2
+preset = "default"
 
-#England [for combined maps]
-frame_margins = [133000,658000,10600,655000]
-plot_wales=True
-plot_scotland=True
-label_x=550000
-label_y=576000
-laa_linewidth=0.6
-post_process = True
-resize_output = True
-heat_lim = 16
-transparent = True
-add_date = False
-add_background = False
-target_width = 865
-target_height = 1060
+#Load plot parameters from pickle file
+print("Loading preset " + preset)
+with open(preset_path + os.path.sep + preset + ".pickle","rb") as f: preset_data=pickle.load(f)        
+short_name,target_places,colour_map,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filename = preset_data
 
-
-
-
-
-
-#England [for standalone maps]
-frame_margins = [133000,658000,10600,655000]
-plot_wales=True
-plot_scotland=True
-plot_towns=True
-label_x=550
-laa_linewidth= 3
-standalone_plot = True
-post_process = True
-resize_output = True
-heat_lim = 10
-transparent = False
-add_date = True
-add_background = False
-target_width = 1280
-target_height = 960000
-label_y=576000
-laa_linewidth=0.6
-post_process = True
-resize_output = True
-heat_lim = 24
-heat_lim = 8
-transparent = True
-add_date = True
-add_background = True
-background_file = "heatmap.png"
-target_width = 1080
-target_height = 1324
-mask_colour='#122B49'
-
-plot_laa = True
-laa_line_width = 1
-
-#North Yorkshire
-frame_margins = [360000,520000,412000,520000]
-target_places = ['Craven','Harrogate','Richmondshire','Hambleton','Ryedale','Scarborough','York','Selby']
-plot_wales=False
-plot_scotland=False
-plot_towns=True
-plot_laa = True
-laa_line_width = 2
-label_x=502000
-label_y=515000
-laa_linewidth=1.2
-add_title=False
-standalone_plot = True
-post_process = True
-resize_output = True
-heat_lim = 8
-transparent = False
-add_date = True
-add_background = False
-add_overlay = True
-overlay_filename='overlay-nyorks.png'
-target_width = 1594
-target_height = 1080
-plot_laa_names=True
-plot_laa_values=True
-restrict_laa_to_targets = True
-laa_fontsize=40
-plot_combined_data = True
-
-#SouthWest
-frame_margins = [133000,465000,10600,254000]
-label_x=143000
-label_y=165000
-title_x=300000
-title_y=50000
-plot_wales=True
-plot_scotland=False
-plot_towns=True
-plot_laa = True
-title_string = "Heatmap for South West Region"
-laa_linewidth= 1.2
-standalone_plot = True
-post_process = True
-resize_output = True
-heat_lim = 6
-transparent = False
-add_date = True
-add_background = False
-add_overlay = False
-add_title = True
-add_footer = True
-target_width  = 1440
-target_height = 1080
-plot_laa_names=False
-plot_laa_values=True
-plot_combined_data = True
-text_align_mode = 'left'
-date_font_size = 80
-title_font_size = 60
-laa_fontsize = 24
-mask_colour='#122B49'
-restrict_laa_to_targets = False
-
-#G London
-frame_margins = [500000,560000,160000,200000]
-
-label_x=502000
-label_y=192000
-title_x=502000
-title_y=195000
-plot_wales=False
-plot_scotland=False
-plot_towns=True
-plot_laa = True
-title_string = "Heatmap for Greater London"
-laa_linewidth= 2
-standalone_plot = True
-post_process = True
-resize_output = True
-heat_lim = 8
-transparent = False
-add_date = True
-add_background = False
-add_overlay = False
-add_title = True
-target_width  = 1620
-target_height = 1080
-plot_laa_names=True
-plot_laa_values=True
-plot_combined_data = True
-text_align_mode = 'left'
-date_font_size = 80
-title_font_size = 60
-laa_fontsize = 24
-mask_colour='#122B49'
-add_footer = True
-restrict_laa_to_targets = False
-
-#South East England
-target_places = []
-colour_map='YlOrRd'
-frame_margins = [400000,640000,80000,240000]
-label_x=520000
-label_y=82000
-title_x=404000
-title_y=232000
-plot_wales=False
-plot_scotland=False
-plot_towns=True
-plot_laa = True
-title_string = "Heatmap for South East England"
-laa_linewidth= 2
-standalone_plot = True
-post_process = True
-resize_output = True
-heat_lim = 8
-transparent = False
-add_date = True
-add_background = False
-add_overlay = False
-add_title = True
-target_width  = 1440
-target_height = 1080
-plot_laa_names=False
-plot_laa_values=True
-plot_combined_data = True
-text_align_mode = 'left'
-date_font_size = 80
-title_font_size = 60
-laa_fontsize = 14
-mask_colour='#122B49'
-add_footer = True
-restrict_laa_to_targets = False
-
+output_path = "plots"
+output_subpath = output_path + os.path.sep + "maps"
+if(os.path.isdir(output_subpath)):
+    if not overwrite_mode:
+        print("Output path already exists; aborting")
+        sys.exit()
+else: os.makedirs(output_subpath)
 
 y_step = (frame_margins[3] - frame_margins[2]) / 2000.0
 
@@ -348,9 +149,9 @@ for day in range(number_of_days):
 
 print("Producing plots")
 def_days = 40  #Plot since 10th March
-def_days = 180 #Plot since start of August
+#def_days = 180 #Plot since start of August
 #def_days = 30
-def_days=247
+#def_days=220
 
 for day in range(def_days,number_of_days):
     c_date = start_date + timedelta(days=day)
@@ -365,9 +166,9 @@ for day in range(def_days,number_of_days):
 
     #england.boundary.plot(ax=ax,zorder=2,linewidth=0.3,color='#888888')
     england.boundary.plot(ax=ax,zorder=2,linewidth=laa_linewidth,color='#888888')
-    #england.plot(column=c_date.strftime('msoa_%m%d'),ax=ax,cmap='autumn',vmin=3,vmax=30,zorder=4)
-    if(plot_combined_data):england.plot(column=c_date.strftime('comb_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=heat_lim,zorder=3)
-    else:  england.plot(column=c_date.strftime('ltla_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=200,zorder=3)
+    england.plot(column=c_date.strftime('msoa_%m%d'),ax=ax,cmap='autumn',vmin=3,vmax=30,zorder=4)
+    #if(plot_combined_data):england.plot(column=c_date.strftime('comb_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=heat_lim,zorder=3)
+    #else:  england.plot(column=c_date.strftime('ltla_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=200,zorder=3)
 
     if(plot_laa):england_laa.boundary.plot(ax=ax,zorder=5,linewidth=laa_line_width,color='#553311')
     if(plot_towns):towns.plot(ax=ax,zorder=6,color='#111144')  
@@ -394,12 +195,12 @@ for day in range(def_days,number_of_days):
     if add_date: plt.text(label_x,label_y,c_date.strftime("%B %d"), horizontalalignment=text_align_mode, style='italic',fontsize=date_font_size)
     if add_title:plt.text(title_x,title_y,title_string,horizontalalignment=text_align_mode,fontsize=title_font_size)
     if add_footer:    
-        footer = file_date.strftime("Based on LTLA and MSOA case data from coronavirus.data.gov.uk, data set published %d/%m/%y. Src: github.com/jah-photoshop/autocovid")
-        f_scale = 2.5
+        footer = file_date.strftime("Based on LTLA and MSOA case data from coronavirus.data.gov.uk, data set published %d/%m/%y. github.com/jah-photoshop/autocovid")
+        fr_scale = f_scale
         if(plot_laa_values): 
             footer = "Values are cases/100K/week. "+footer
-            f_scale = 2.9
-        plt.text(frame_margins[1]-( (frame_margins[1] - frame_margins[0]) * 0.01),frame_margins[2]+( (frame_margins[3] - frame_margins[2]) * 0.01),footer,horizontalalignment='right',fontsize=title_font_size / f_scale, bbox=dict(boxstyle='square',color='#AAAA8844'))
+            fr_scale = f_scale * 1.2
+        plt.text(frame_margins[1]-( (frame_margins[1] - frame_margins[0]) * 0.01),frame_margins[2]+( (frame_margins[3] - frame_margins[2]) * 0.01),footer,horizontalalignment='right',fontsize=title_font_size / fr_scale, bbox=dict(boxstyle='square',color='#AAAA8844'))
     plt.savefig(f_string, bbox_inches='tight')
     if post_process:
         if resize_output: os.system('convert %s -resize %dx%d\! %s' % (f_string,target_width,target_height,f_string))
