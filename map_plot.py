@@ -1,57 +1,67 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Heirarchical plot for local Covid data - England
+Heirarchical map plot for local Covid data - England
 
 Created on Sun Oct  4 14:16:24 2020
 
 @author: jah-photoshop
 """
 
-print("Covid Local Data Plotter - version 1.0   -   @jah-photoshop Oct 2020")
-print("")
+print("________________________________________________________________________________")
+print("Covid Local Data Map Plotter    -    version 1.1    -    @jah-photoshop Oct 2020")
+print("________________________________________________________________________________")
+
 
 import os,csv, numpy as np,geopandas as gpd,pandas as pd,matplotlib.pyplot as plt, random, sys, time, pickle
 from datetime import datetime, timedelta
 
 debug = False
-merge_plots = True
-overwrite_mode = True
+overwrite_mode = True           #If set to false, program will halt if output folder exists
 data_path = "data"
 preset_path = "presets"
+output_path = "plots"
 
 map_filename = "zip://" + data_path + os.path.sep + "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_EW_BSC-shp.zip"
-#laa_map_filename = "zip://" + data_path + os.path.sep + "Local_Authority_Districts__May_2020__UK_BUC-shp.zip"
-
 laa_map_filename = "zip://" + data_path + os.path.sep + "Local_Authority_Districts__May_2020__Boundaries_UK_BGC-shp.zip"
-
+lsoa_map_filename = "zip://" + data_path + os.path.sep + "Lower_Layer_Super_Output_Areas__December_2011__Boundaries_EW_BGC_v3-shp.zip"
 town_map_filename = "zip://" + data_path + os.path.sep + "Major_Towns_and_Cities__December_2015__Boundaries-shp.zip"
-msoa_filename = data_path + os.path.sep + "MSOAs_latest.csv"
-cases_filename = data_path + os.path.sep + "coronavirus-cases_latest.csv"
+msoa_filename = data_path + os.path.sep + "msoa.csv"
+lsoa_filename = data_path + os.path.sep + "lsoa.csv"
+cases_filename = data_path + os.path.sep + "casedata.csv"
 plt.rcParams['axes.facecolor']='#121240'
 
-preset = "default"
+preset = "ltla"
 
 #Load plot parameters from pickle file
 print("Loading preset " + preset)
 with open(preset_path + os.path.sep + preset + ".pickle","rb") as f: preset_data=pickle.load(f)        
-short_name,target_places,colour_map,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filename = preset_data
+short_name,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filename,background_file = preset_data
 
-output_path = "plots"
-output_subpath = output_path + os.path.sep + "maps"
+using_lsoa_data = plot_lsoa_data
+
+output_subpath = output_path + os.path.sep + short_name
 if(os.path.isdir(output_subpath)):
     if not overwrite_mode:
-        print("Output path already exists; aborting")
+        print("Output path %s already exists; aborting" % (output_subpath))
         sys.exit()
 else: os.makedirs(output_subpath)
 
 y_step = (frame_margins[3] - frame_margins[2]) / 2000.0
 
+print("________________________________________________________________________________")
+print("LOADING MAP DATA")
 #Load map data for England [and Wales] from shape file
 print("Loading MSOA map data from " + map_filename)
 england=gpd.read_file(map_filename,rows=6791)
 #wales=gpd.read_file(map_filename,rows=slice(6791,7199)) #Removed; now read wales from LAA file instead for simpler plot...
 msoa_names = england.MSOA11CD.to_list()
+
+#Load LSOA map data for England [and Wales] from shape file
+if(using_lsoa_data):
+    print("Loading LSOA map data from " + lsoa_map_filename)
+    lsoa_map=gpd.read_file(lsoa_map_filename,rows=32844)
+else: print("Not loading LSOA data")
 
 print("Loading LAA map data from " + laa_map_filename)
 england_laa=gpd.read_file(laa_map_filename,rows=314)
@@ -61,15 +71,21 @@ laa_names = england_laa.LAD20NM.to_list()
 scotland=gpd.read_file(laa_map_filename,rows=slice(326,357))
 wales=gpd.read_file(laa_map_filename,rows=slice(357,379))
 
-
-print("Loading town map data from ")
+print("Loading town map data from " + town_map_filename)
 towns=gpd.read_file(town_map_filename)
 towns['centroids']=towns.centroid
 towns=towns.set_geometry('centroids')
 
+print("________________________________________________________________________________")
+print("LOADING CASE DATA")
 #Load MSOA weekly case data from CSV file
 print("Loading MSOA data from " + msoa_filename)
 with open(msoa_filename) as csv_file: msoa_data = [row for row in csv.reader(csv_file, delimiter=',')][1:-1]
+
+#Load LSOA weekly case data from CSV file
+if(using_lsoa_data):
+    print("Loading LSOA data from " + lsoa_filename)
+    with open(lsoa_filename) as csv_file: raw_lsoa_data= [row for row in csv.reader(csv_file, delimiter=',')][1:-1]
 
 #Load daily case data from CSV file
 print("Loading cases data from " + cases_filename)
@@ -87,9 +103,11 @@ if not restrict_laa_to_targets: target_places=list(set([entry[0] for entry in ca
 
 for target in list.copy(target_places):
     if target not in laa_names:
-        print("Target %s is not in LTLA list" % (target))
+        if debug: print("Target %s is not in LTLA list" % (target))
         target_places.remove(target)
-        
+
+print("________________________________________________________________________________")
+print("PROCESSING DATA")        
 #Calculate the case rate, for each day, for each area
 print("Calculating area data")
 laa_rates = [[0] * number_of_days ] * len(laa_names)
@@ -112,10 +130,27 @@ for name in ltla_names:
     if name in area_codes_index:
         ltla_indices.append(area_codes.index(name))
     else: 
-        print("Missing LTLA: %s" % name)
+        if debug: print("Missing LTLA: %s" % name)
         ltla_indices.append(-1)
-        
-print("Building msoa history data")
+
+if(using_lsoa_data):
+    print ("Cross-referencing LSOA data")
+    lsoa_map_cd_list = lsoa_map.LSOA11CD.to_list()
+    lsoa_data_cd_list = [e[0] for e in raw_lsoa_data]
+    lsoa_xref_list = []
+    lsoa_data = []
+    w_l = len(raw_lsoa_data[0])
+    for count,entry in enumerate(lsoa_map_cd_list):
+        if entry not in lsoa_data_cd_list:
+            if(debug):print("LSOA %s not found in data set" % (entry))
+            lsoa_xref_list.append(-1)
+            lsoa_data.append([[-99] * w_l])
+        else: 
+            ix = lsoa_data_cd_list.index(entry)
+            lsoa_xref_list.append(ix)
+            lsoa_data.append(raw_lsoa_data[ix])
+    
+print("Building MSOA history data")
 number_of_weeks = int(number_of_days / 7)
 day_offsets = [[random.randint(0,6) for i in range(number_of_weeks + 1)] for entry in msoa_data]
 hist_msoa_data = []
@@ -130,6 +165,30 @@ for count,entry in enumerate(msoa_data):
         if(day_rate < 0.5): day_rate = 0
         adj_msoa.append(day_rate)
     hist_msoa_data.append(adj_msoa)
+    
+
+if(using_lsoa_data):
+    print("Building LSOA history data")
+    lsoa_day_offsets = [[random.randint(0,6) for i in range(number_of_weeks + 1)] for entry in lsoa_data]
+    hist_lsoa_data = []
+    lsoa_warning = False
+    for count,entry in enumerate(lsoa_data):
+        adj_lsoa = []      
+        #Fill out data set with zeros if not up to date with cases data
+        while( int(number_of_days / 7) + 2 >= len(entry) ):
+            if not lsoa_warning: print ("Warning: No LSOA data for week %d" % (len(entry) - 8))     
+            lsoa_warning = True
+            entry.append(-99)
+        for day in range(number_of_days):
+            day_rate = 0
+            if (day > 0): day_rate += adj_lsoa[day-1]
+            day_rate *= 0.8
+            week = int(day / 7)
+            if(day % 7 == lsoa_day_offsets[count][week]): day_rate += ( 0 if int(lsoa_data[count][week+2]) < 0 else int(lsoa_data[count][week + 2]) )
+            if(day_rate < 0.5): day_rate = 0
+            adj_lsoa.append(day_rate)
+        hist_lsoa_data.append(adj_lsoa)
+
 
 print("Building map data")
 for day in range(number_of_days):
@@ -138,6 +197,10 @@ for day in range(number_of_days):
     msoa_series = pd.Series([np.nan if int(row[week+8]) < 0 else int(row[week + 8]) for row in msoa_data])
     msoa_series_title = c_date.strftime('msoa_%m%d')
     england[msoa_series_title]=msoa_series
+    if(using_lsoa_data):
+        lsoa_series = pd.Series([np.nan if int(row[week+2]) < 0 else int(row[week + 2]) for row in lsoa_data])
+        lsoa_series_title = c_date.strftime('lsoa_%m%d')
+        lsoa_map[lsoa_series_title]=lsoa_series
     ltla_series = pd.Series([np.nan if el < 0 else area_rates[el][day] for el in ltla_indices]) 
     ltla_series_title = c_date.strftime('ltla_%m%d')
     england[ltla_series_title]=ltla_series
@@ -147,11 +210,12 @@ for day in range(number_of_days):
     comb_series_title = c_date.strftime('comb_%m%d')
     england[comb_series_title]=comb_series
 
-print("Producing plots")
+print("________________________________________________________________________________")
+print("PRODUCING PLOTS")
 def_days = 40  #Plot since 10th March
 #def_days = 180 #Plot since start of August
 #def_days = 30
-#def_days=220
+def_days=228
 
 for day in range(def_days,number_of_days):
     c_date = start_date + timedelta(days=day)
@@ -160,18 +224,38 @@ for day in range(def_days,number_of_days):
     fig,ax = plt.subplots(figsize=(36,36),frameon=not transparent)
     ax.set_aspect('equal')
     ax.axis(frame_margins)
+    
+    #divider = make_axes_locatable(ax)
+    #cax = divider.append_axes("bottom",size="5%",pad=0.1)
     plt.axis('off')
-    if(plot_wales):wales.plot(ax=ax,zorder=1,color=mask_colour)
-    if(plot_scotland):scotland.plot(ax=ax,zorder=1,color=mask_colour)
-
-    #england.boundary.plot(ax=ax,zorder=2,linewidth=0.3,color='#888888')
-    england.boundary.plot(ax=ax,zorder=2,linewidth=laa_linewidth,color='#888888')
-    england.plot(column=c_date.strftime('msoa_%m%d'),ax=ax,cmap='autumn',vmin=3,vmax=30,zorder=4)
-    #if(plot_combined_data):england.plot(column=c_date.strftime('comb_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=heat_lim,zorder=3)
-    #else:  england.plot(column=c_date.strftime('ltla_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=200,zorder=3)
-
-    if(plot_laa):england_laa.boundary.plot(ax=ax,zorder=5,linewidth=laa_line_width,color='#553311')
-    if(plot_towns):towns.plot(ax=ax,zorder=6,color='#111144')  
+    z=0
+    if(plot_wales):
+        wales.plot(ax=ax,zorder=z,color=mask_colour)
+        z+=1
+    if(plot_scotland):
+        scotland.plot(ax=ax,zorder=z,color=mask_colour)
+        z+=1
+    if(plot_msoa_boundaries):
+        england.boundary.plot(ax=ax,zorder=z,linewidth=laa_linewidth,color='#888888')
+        z+=1
+    if(plot_ltla_data):
+        england.plot(column=c_date.strftime('ltla_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=200,zorder=z)
+        z+=1
+    if(plot_combined_data):
+        england.plot(column=c_date.strftime('comb_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=heat_lim,zorder=z)
+        z+=1
+    if(plot_msoa_data):
+        england.plot(column=c_date.strftime('msoa_%m%d'),ax=ax,cmap=msoa_colour_map,vmin=3,vmax=30,zorder=z,alpha=msoa_alpha)
+        z+=1
+    if(plot_lsoa_data):
+        lsoa_map.plot(column=c_date.strftime('lsoa_%m%d'),ax=ax,cmap=lsoa_colour_map,vmin=3,vmax=30,zorder=z,alpha=lsoa_alpha)
+        z+=1
+    if(plot_laa):
+        england_laa.boundary.plot(ax=ax,zorder=z,linewidth=laa_linewidth,color='#553311')
+        z+=1
+    if(plot_towns):
+        towns.plot(ax=ax,zorder=z,color='#111144')
+        z+=1
     if(plot_laa_names or plot_laa_values):
         #laa_centroids.plot(ax=ax,zorder=6,color='#33CC44')
         for name in target_places:
