@@ -100,8 +100,8 @@ resize_output = True
 heat_lim = 10
 transparent = True
 add_date = True
-add_background = False
-add_overlay = False
+add_background = True
+add_overlay = True
 add_title = False
 target_width  = 1080
 target_height = 1360
@@ -119,7 +119,8 @@ mask_colour='#406080'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 2.72
-overlay_filename = ''
+overlay_filename = 'ltla-fg.png'
+background_file = "ltla-bg.png"
 write_pickle()
 
 

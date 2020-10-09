@@ -212,10 +212,10 @@ for day in range(number_of_days):
 
 print("________________________________________________________________________________")
 print("PRODUCING PLOTS")
-def_days = 40  #Plot since 10th March
+def_days = 30  #Plot since 10th March
 #def_days = 180 #Plot since start of August
 #def_days = 30
-def_days=228
+#def_days=228
 
 for day in range(def_days,number_of_days):
     c_date = start_date + timedelta(days=day)
