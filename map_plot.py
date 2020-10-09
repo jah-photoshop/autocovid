@@ -13,7 +13,7 @@ print("Covid Local Data Map Plotter    -    version 1.1    -    @jah-photoshop O
 print("________________________________________________________________________________")
 
 
-import os,csv, numpy as np,geopandas as gpd,pandas as pd,matplotlib.pyplot as plt, random, sys, time, pickle
+import os,csv, numpy as np,geopandas as gpd,pandas as pd,matplotlib.pyplot as plt, random, sys, time, pickle, shutil
 from datetime import datetime, timedelta
 
 batch_mode = True
@@ -22,9 +22,11 @@ preset = 'default'
 
 debug = False
 overwrite_mode = True           #If set to false, program will halt if output folder exists
+archive = True
 data_path = "data"
 preset_path = "presets"
 output_path = "plots"
+archive_path = datetime.now().strftime("/home/robotlab/jah-photoshop-googledrive/output-%Y%m%d/")
 
 if(os.path.isdir(output_path)):
     if not overwrite_mode:
@@ -220,9 +222,9 @@ for day in range(number_of_days):
 
 print("________________________________________________________________________________")
 print("PRODUCING PLOTS")
-def_days = 30  #Plot since 1st March
+def_days = 31  #Plot since 1st March
 #def_days = 180 #Plot since start of August
-def_days = 31
+#def_days = 31
 #def_days=250
 print("Plotting %d days of data [%s to %s]" % (number_of_days-def_days, (start_date + timedelta(days=def_days)).strftime("%d/%m/%Y"), (start_date + timedelta(days=number_of_days - 1)).strftime("%d/%m/%Y") ))
 print("________________________________________________________________________________")
@@ -316,6 +318,10 @@ for pre in preset_list:
             if resize_output: os.system('convert %s -resize %dx%d\! %s' % (f_string,target_width,target_height,f_string))
             if add_background: os.system('composite %s %s %s' % (f_string,background_file,f_string))
             if add_overlay: os.system('composite %s %s %s' % (overlay_filename, f_string,f_string))
-        fig.clf()    
+        fig.clf()   
+        #Copy file to googledrive
+        if(archive):
+            if not os.path.exists(archive_path + short_name): os.makedirs(archive_path+short_name)
+            shutil.copyfile(f_string,archive_path + short_name + os.path.sep + c_date.strftime("map-%Y%m%d.png"))
     print("________________________________________________________________________________")
 print("Operation complete.")
