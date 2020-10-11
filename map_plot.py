@@ -13,21 +13,32 @@ print("Covid Local Data Map Plotter    -    version 1.1    -    @jah-photoshop O
 print("________________________________________________________________________________")
 
 
-import os,csv, numpy as np,geopandas as gpd,pandas as pd,matplotlib.pyplot as plt, random, sys, time, pickle, shutil
+import os,csv, numpy as np,geopandas as gpd,pandas as pd,scipy.stats as ss, matplotlib.pyplot as plt, random, sys, time, pickle, shutil, mapclassify as mc
 from datetime import datetime, timedelta
 
-batch_mode = True
-batch_list = ['ltla','msoa','lsoa','default','heatmap','nyorks-lsoa','northeast','northwest','southwest','southeast','midlands','east','yorkshire','northyorkshire']
-preset = 'default'
+#def_days = 31  #Plot since 1st March
+#def_days = 180 #Plot since start of August
+#def_days = 31
+def_days=220
+def_days=31
+
+batch_mode = False
+batch_list = ['ltla','msoa','lsoa','default','rank','london','heatmap','nyorks-lsoa','northeast','northwest','southwest','southeast','midlands','east','yorkshire','northyorkshire']
+
+batch_list=['london-phe','london-phex','ltla-phe','ltla-phex']
+preset = 'doubling-bin'
 
 debug = False
 overwrite_mode = True           #If set to false, program will halt if output folder exists
-archive = True
+archive = False
 data_path = "data"
 preset_path = "presets"
 output_path = "plots"
 archive_path = datetime.now().strftime("/home/robotlab/jah-photoshop-googledrive/output-%Y%m%d/")
 
+#ltla_vmax=200
+
+ltla_vmax = 80
 if(os.path.isdir(output_path)):
     if not overwrite_mode:
         print("Output path %s already exists; aborting" % (output_path))
@@ -51,18 +62,19 @@ else:
 print("Plots to make: %s" % (preset_list))
 
 def load_parameters(preset_name):
-    global short_name,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filename,background_file
+    global short_name,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file
     with open(preset_path + os.path.sep + preset_name + ".pickle","rb") as f: preset_data=pickle.load(f)        
-    short_name,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filename,background_file = preset_data
+    short_name,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file = preset_data
 
 using_lsoa_data = False
-
+use_manual_binning = False
 for plot in preset_list:
     load_parameters(plot)
     if plot_lsoa_data: using_lsoa_data = True
+    if plot_classified_ltla:
+        if ltla_classifier_mode == 'manual':
+            use_manual_binning = True
 
-
-y_step = (frame_margins[3] - frame_margins[2]) / 2000.0
 
 print("________________________________________________________________________________")
 print("LOADING MAP DATA")
@@ -111,6 +123,7 @@ end_date = datetime.strptime(cases_data[0][3],"%Y-%m-%d")
 number_of_days=(end_date-start_date).days + 1
 area_codes_index = [e[1] for e in cases_data]
 area_rates=[]
+area_ranks=[]
 file_date=datetime.strptime(time.ctime(os.path.getctime(cases_filename)),"%c")
 file_age=(datetime.today()-file_date).days
 if file_age > 0 : print ("Warning: The cases file is %d days old..." % (file_age))
@@ -121,6 +134,8 @@ print("PROCESSING DATA")
 #Calculate the case rate, for each day, for each area
 print("Calculating area data")
 laa_rates = [[0] * number_of_days ] * len(laa_names)
+
+
 for area_code in area_codes:
     area_cases = [0] * number_of_days
     start_index = area_codes_index.index(area_code)
@@ -133,6 +148,14 @@ for area_code in area_codes:
         if(debug):print("Area code %s recognised in LAA data (%s), Pop %f  Max rate %f" % (area_code,laa_names[laa_ids.index(area_code)],area_pop,max(area_rate)))
     elif(debug):print("Area code %s not found in LAA data,  Pop %f  Max rate %f" % (area_code,area_pop,max(area_rate)))
     area_rates.append(area_rate)
+calc_ltla_rank = True    
+if(calc_ltla_rank):
+    print("Calculating area ranks")
+    for day in range(number_of_days):
+        rates = [area[day] for area in area_rates]
+        ranked = ss.rankdata(rates) / len(area_rates)
+        area_ranks.append(ranked)
+        
 print("Cross-referencing area data")
 ltla_names = [msoa_data[i][4] for i in range(len(msoa_names))]
 ltla_indices = []
@@ -199,7 +222,7 @@ if(using_lsoa_data):
             adj_lsoa.append(day_rate)
         hist_lsoa_data.append(adj_lsoa)
 
-
+               
 print("Building map data")
 for day in range(number_of_days):
     week=int(day / 7)
@@ -214,18 +237,33 @@ for day in range(number_of_days):
     ltla_series = pd.Series([np.nan if el < 0 else area_rates[el][day] for el in ltla_indices]) 
     ltla_series_title = c_date.strftime('ltla_%m%d')
     england[ltla_series_title]=ltla_series
-    hist_ltla_series = pd.Series([el[day] for el in hist_msoa_data])
+    hist_ltla_series = pd.Series([el[day] for el in hist_msoa_data])    
     #comb_series = (ltla_series + (6 * hist_ltla_series))**(1/2)
     comb_series = (ltla_series + (6 * hist_ltla_series))**(1/3)
     comb_series_title = c_date.strftime('comb_%m%d')
     england[comb_series_title]=comb_series
-
+    if(calc_ltla_rank):
+        ltla_rank_series = pd.Series([area_ranks[day][el] for el in ltla_indices])
+        ltla_rank_series_title = c_date.strftime('rank_%m%d')
+        england[ltla_rank_series_title]=ltla_rank_series
+    if(use_manual_binning):
+        b_val = -0.1
+        bin_totals=[]
+        for el in ltla_indices:
+            bin_count = 0
+            for bin_val in ltla_classifier_bins:
+                if area_rates[el][day] > bin_val: bin_count += 1 
+            bin_totals.append(bin_count)
+        england[c_date.strftime('bin_%m%d')]=pd.Series(bin_totals)
+#        for count,cbin in enumerate(ltla_classifier_bins):
+#            bin_series_title=('bin%02d' % count) + c_date.strftime('%m%d')
+#            bin_series = pd.Series([np.nan if area_rates[el][day] < b_val or area_rates[el][day]>=cbin else 1 for el in ltla_indices])
+#            b_val = cbin
+#            england[bin_series_title]=bin_series
+#            
 print("________________________________________________________________________________")
 print("PRODUCING PLOTS")
-def_days = 31  #Plot since 1st March
-#def_days = 180 #Plot since start of August
-#def_days = 31
-#def_days=250
+
 print("Plotting %d days of data [%s to %s]" % (number_of_days-def_days, (start_date + timedelta(days=def_days)).strftime("%d/%m/%Y"), (start_date + timedelta(days=number_of_days - 1)).strftime("%d/%m/%Y") ))
 print("________________________________________________________________________________")
 
@@ -238,6 +276,8 @@ for pre in preset_list:
     load_parameters(pre)
     fig=plt.figure(figsize=(36,36),frameon=not transparent)
     output_subpath = output_path + os.path.sep + short_name
+    y_step = (frame_margins[3] - frame_margins[2]) / 2000.0
+
     #print("Output subpath %s" % output_subpath)
     if not os.path.exists(output_subpath): os.makedirs(output_subpath)
     if not restrict_laa_to_targets: target_places=list(set([entry[0] for entry in cases_data]))
@@ -267,7 +307,24 @@ for pre in preset_list:
             england.boundary.plot(ax=ax,zorder=z,linewidth=laa_linewidth,color='#888888')
             z+=1
         if(plot_ltla_data):
-            england.plot(column=c_date.strftime('ltla_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=200,zorder=z)
+            england.plot(column=c_date.strftime('ltla_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=ltla_vmax,zorder=z)
+            z+=1
+        if(plot_classified_ltla):
+            if ltla_classifier_mode == 'manual':
+                england.plot(column=c_date.strftime('bin_%m%d'),ax=ax,vmin=0,vmax=len(ltla_classifier_bins)-1,cmap=colour_map,zorder=z)
+                z+=1
+#                ltla_classifier_colours = ['#338ed7','#ddfffe','#d9fedf','#f3ff92','#ffa923','#e90418','#ad0620']
+#                for count,cbin in enumerate(ltla_classifier_bins):
+#                    england.plot(column=('bin%02d' % count) + c_date.strftime('%m%d'),ax=ax,vmin=0,vmax=1,facecolor=ltla_classifier_colours[count],zorder=z)
+#                    z+=1
+            else:
+                #Classify the relevant data using mapclassify
+                classified = mc.UserDefined(england.get(c_date.strftime('ltla_%m%d')),ltla_classifier_bins)
+                classified.plot(england,ax=ax,cmap=colour_map,border_width=0.1,border_color='#EEEEEE22',legend=True,legend_kwds={'loc':'center left'})            
+        if(plot_ranks):
+#            england.plot(column=c_date.strftime('rank_%m%d'),ax=ax,cmap=colour_map,vmin=0.0,vmax=1.0,zorder=z)
+            #q_scheme=mc.Quantiles(england.get(c_date.strftime('rank_%m%d')),k=4)
+            england.plot(column=c_date.strftime('rank_%m%d'),ax=ax,cmap=colour_map,zorder=z,scheme='quantiles')#vmin=0.0,vmax=1.0,
             z+=1
         if(plot_combined_data):
             england.plot(column=c_date.strftime('comb_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=heat_lim,zorder=z)
@@ -302,12 +359,12 @@ for pre in preset_list:
                     yy_shift = 0
                     if plot_laa_names: 
                         yy_shift = y_step * laa_fontsize
-                        plt.text(laa_centroids[count][0],laa_centroids[count][1]+y_shift+yy_shift,name,horizontalalignment=al_mode,fontsize=laa_fontsize*0.6,bbox=dict(boxstyle='square',color='#AAAA8877'))
-                    if plot_laa_values: plt.text(laa_centroids[count][0],laa_centroids[count][1]+y_shift-yy_shift,"%3.1f" % val,horizontalalignment=al_mode,fontsize=laa_fontsize,bbox=dict(boxstyle='square',color='#FFFFEE11'))
+                        plt.text(laa_centroids[count][0],laa_centroids[count][1]+y_shift+yy_shift,name,horizontalalignment=al_mode,fontsize=laa_fontsize*0.6,bbox=dict(boxstyle='square',color='#AAAA8855'))
+                    if plot_laa_values: plt.text(laa_centroids[count][0],laa_centroids[count][1]+y_shift-yy_shift,"%3.1f" % val,horizontalalignment=al_mode,fontsize=laa_fontsize) #bbox=dict(boxstyle='square',color='#FFFFEE11')
         if add_date: plt.text(label_x,label_y,c_date.strftime("%B %d"), horizontalalignment=text_align_mode, style='italic',fontsize=date_font_size)
         if add_title:plt.text(title_x,title_y,title_string,horizontalalignment=text_align_mode,fontsize=title_font_size)
         if add_footer:    
-            footer = file_date.strftime("Based on LTLA and MSOA case data from coronavirus.data.gov.uk, data set published %d/%m/%y. github.com/jah-photoshop/autocovid")
+            footer = file_date.strftime(footer_message + " Data set published %d/%m/%y. github.com/jah-photoshop/autocovid")
             fr_scale = f_scale
             if(plot_laa_values): 
                 footer = "Values are cases/100K/week. "+footer
@@ -317,7 +374,12 @@ for pre in preset_list:
         if post_process:
             if resize_output: os.system('convert %s -resize %dx%d\! %s' % (f_string,target_width,target_height,f_string))
             if add_background: os.system('composite %s %s %s' % (f_string,background_file,f_string))
-            if add_overlay: os.system('composite %s %s %s' % (overlay_filename, f_string,f_string))
+            if add_overlay: 
+                for count, of in enumerate(overlay_filenames):
+                    if of[-1]==os.path.sep: of+=c_date.strftime("map-%Y%m%d.png")
+                    print(of)
+                    if overlay_positions[count] == [0,0]: os.system('composite %s %s %s' % (of, f_string,f_string))                    
+                    else: os.system('composite %s -geometry +%d+%d %s %s' % (of, overlay_positions[count][0],overlay_positions[count][1],f_string,f_string))
         fig.clf()   
         #Copy file to googledrive
         if(archive):

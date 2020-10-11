@@ -8,7 +8,7 @@ Generate preset (.pickle) files
 Created on Wed Oct  7 13:55:28 2020
 
 """
-import os, pickle
+import os, pickle, numpy as np
 preset_folder = "presets"
 background_file = ""
 
@@ -16,11 +16,11 @@ if(not os.path.isdir(preset_folder)): os.makedirs(preset_folder)
 
 
 def write_pickle():
-    d_list=[short_name,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,
+    d_list=[short_name,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,
             plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,
             heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,
             target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,
-            date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filename,background_file]
+            date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file]
     with open(preset_folder+os.path.sep+short_name+".pickle","wb") as f: pickle.dump(d_list,f)        
 
 
@@ -28,6 +28,11 @@ def write_pickle():
 
 #Default (England, combined data, with background)
 short_name="default"
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+plot_ranks = False
 target_places = []
 colour_map='YlOrRd'
 msoa_colour_map='YlOrRd'
@@ -71,11 +76,362 @@ mask_colour='#EEEEEE'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 3.3
-overlay_filename = ''
+overlay_filenames = []
+overlay_positions = []
 write_pickle()
+
+#LTLA Heatmap - based on PHE England maps
+short_name="london-phe"
+footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
+plot_classified_ltla = True
+ltla_classifier_mode = 'manual'
+ltla_classifier_bins = [0.1,5,10,15,30,45,10000]
+plot_ranks = False
+target_places = []
+colour_map='jet'
+msoa_colour_map='YlOrRd'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [502000,562000,153000,205000]
+label_x=502000
+label_y=192000
+title_x=502000
+title_y=195000
+plot_msoa_boundaries=False
+plot_wales=False
+plot_scotland=False
+plot_towns=False
+plot_laa = True
+title_string = ""
+laa_linewidth= 4
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 10
+transparent = False
+add_date = False
+add_background = False
+add_overlay = True
+add_title = False
+target_width  = 606
+target_height = 486
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data = False
+text_align_mode = 'center'
+date_font_size = 76
+title_font_size = 64
+laa_fontsize = 14
+mask_colour='#EEEEEEAA'
+add_footer = False
+restrict_laa_to_targets = False
+f_scale = 2.3
+overlay_filenames = ['phe_london_overlay.png']
+overlay_positions = [[0,0]]
+background_file = "ltla-bg.png"
+write_pickle()
+
+#LTLA Heatmap - based on PHE England maps
+short_name="ltla-phe"
+footer_message = ""
+plot_classified_ltla = True
+ltla_classifier_mode = 'manual'
+ltla_classifier_bins = [0.1,5,10,15,30,45,10000]
+plot_ranks = False
+target_places = []
+colour_map='jet'
+msoa_colour_map='YlOrRd'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [0,660000,8000,668000]
+label_x=545000
+label_y=596000
+title_x=395500
+title_y=675000
+plot_msoa_boundaries=False
+plot_wales=True
+plot_scotland=True
+plot_towns=False
+plot_laa = True
+title_string = "Covid-19 Case Rate in LTLA Areas"
+laa_linewidth= 0.6
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 10
+transparent = False
+add_date = True
+add_background = False
+add_overlay = True
+add_title = False
+target_width  = 1600
+target_height = 1600
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data = False
+text_align_mode = 'center'
+date_font_size = 76
+title_font_size = 64
+laa_fontsize = 14
+mask_colour='#EEEEEEAA'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.1
+overlay_filenames = ['ccr-7bin.png','plots/london-phe/']
+overlay_positions = [[0,0],[40,190]]
+background_file = "ltla-bg.png"
+write_pickle()
+
+
+
+
+#LTLA Heatmap - based on PHE England maps, extended by 3 bins
+short_name="london-phex"
+footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
+plot_classified_ltla = True
+ltla_classifier_mode = 'manual'
+ltla_classifier_bins = [0.1,5,10,15,30,45,90,180,360,10000]
+plot_ranks = False
+target_places = []
+colour_map='jet'
+msoa_colour_map='YlOrRd'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [502000,562000,153000,205000]
+label_x=502000
+label_y=192000
+title_x=502000
+title_y=195000
+plot_msoa_boundaries=False
+plot_wales=False
+plot_scotland=False
+plot_towns=False
+plot_laa = True
+title_string = ""
+laa_linewidth= 4
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 10
+transparent = False
+add_date = False
+add_background = False
+add_overlay = True
+add_title = False
+target_width  = 606
+target_height = 486
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data = False
+text_align_mode = 'center'
+date_font_size = 76
+title_font_size = 64
+laa_fontsize = 14
+mask_colour='#EEEEEEAA'
+add_footer = False
+restrict_laa_to_targets = False
+f_scale = 2.3
+overlay_filenames = ['phe_london_overlay.png']
+overlay_positions = [[0,0]]
+background_file = "ltla-bg.png"
+write_pickle()
+
+#LTLA Heatmap - based on PHE England maps - extended by 3 bins
+short_name="doubling-bin"
+footer_message = ""
+plot_classified_ltla = True
+ltla_classifier_mode = 'manual'
+ltla_classifier_bins = [1,2,4,8,16,32,64,128,256,10000]
+plot_ranks = False
+target_places = []
+colour_map='jet'
+msoa_colour_map='YlOrRd'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [0,660000,8000,668000]
+label_x=545000
+label_y=596000
+title_x=395500
+title_y=675000
+plot_msoa_boundaries=False
+plot_wales=True
+plot_scotland=True
+plot_towns=False
+plot_laa = True
+title_string = "Covid-19 Case Rate in LTLA Areas"
+laa_linewidth= 0.6
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 10
+transparent = False
+add_date = True
+add_background = False
+add_overlay = True
+add_title = False
+target_width  = 1600
+target_height = 1600
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data = False
+text_align_mode = 'center'
+date_font_size = 76
+title_font_size = 64
+laa_fontsize = 14
+mask_colour='#EEEEEEAA'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.1
+overlay_filenames = ['doubling.png','plots/london-phex/']
+overlay_positions = [[0,0],[40,190]]
+background_file = "ltla-bg.png"
+write_pickle()
+
+
+#LTLA Heatmap - based on PHE England maps - extended by 3 bins
+short_name="ltla-phex"
+footer_message = ""
+plot_classified_ltla = True
+ltla_classifier_mode = 'manual'
+ltla_classifier_bins = [0.1,5,10,15,30,45,90,180,360,10000]
+plot_ranks = False
+target_places = []
+colour_map='jet'
+msoa_colour_map='YlOrRd'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [0,660000,8000,668000]
+label_x=545000
+label_y=596000
+title_x=395500
+title_y=675000
+plot_msoa_boundaries=False
+plot_wales=True
+plot_scotland=True
+plot_towns=False
+plot_laa = True
+title_string = "Covid-19 Case Rate in LTLA Areas"
+laa_linewidth= 0.6
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 10
+transparent = False
+add_date = True
+add_background = False
+add_overlay = True
+add_title = False
+target_width  = 1600
+target_height = 1600
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data = False
+text_align_mode = 'center'
+date_font_size = 76
+title_font_size = 64
+laa_fontsize = 14
+mask_colour='#EEEEEEAA'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.1
+overlay_filenames = ['ccr-10bin.png','plots/london-phex/']
+overlay_positions = [[0,0],[40,190]]
+background_file = "ltla-bg.png"
+write_pickle()
+
+
+#LTLA Heatmap - blocks
+short_name="ltla-q"
+footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
+plot_classified_ltla = True
+ltla_classifier_mode = 'manual'
+ltla_classifier_bins = [0.1,5,10,15,30,45,10000]
+plot_ranks = False
+target_places = []
+colour_map='rainbow'
+#Approximate PHE Colour map
+#Bins 0-5 Pale Blue [230 248 248]
+#c1 = np.array([217/256, 246/256, 193/256, 1])
+#c2 =
+#      10-15 [244 237 126]
+#      15-30 [255 170 35]
+#      30-45 [251 43 29]
+#      45+   [170 17 11]
+      
+msoa_colour_map='YlOrRd'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [132000,659000,9600,695000]
+label_x=545000
+label_y=596000
+title_x=395500
+title_y=675000
+plot_msoa_boundaries=False
+plot_wales=True
+plot_scotland=True
+plot_towns=False
+plot_laa = True
+title_string = "Covid-19 Case Rate in LTLA Areas"
+laa_linewidth= 0.6
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 10
+transparent = False
+add_date = True
+add_background = False
+add_overlay = False
+add_title = True
+target_width  = 1080
+target_height = 1400
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data = False
+text_align_mode = 'center'
+date_font_size = 76
+title_font_size = 64
+laa_fontsize = 14
+mask_colour='#EEEEEE'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.72
+overlay_filenames = []
+overlay_positions = []
+background_file = "ltla-bg.png"
+write_pickle()
+
 
 #LTLA Heatmap
 short_name="ltla"
+footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+plot_ranks = False
 target_places = []
 colour_map='YlGnBu'
 msoa_colour_map='YlOrRd'
@@ -119,13 +475,74 @@ mask_colour='#406080'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 2.72
-overlay_filename = 'ltla-fg.png'
+overlay_positions = []
+overlay_filenames = ['ltla-fg.png']
 background_file = "ltla-bg.png"
 write_pickle()
 
 
+#LTLA Ranked Heatmap
+short_name="rank"
+footer_message = "Based on average case rate from LTLA case data @ coronavirus.data.gov.uk."
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+plot_ranks = True
+target_places = []
+colour_map='bwr'
+msoa_colour_map='YlOrRd'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [132000,659000,9600,675000]
+label_x=542000
+label_y=596000
+title_x=541000
+title_y=655000
+plot_msoa_boundaries=False
+plot_wales=True
+plot_scotland=True
+plot_towns=False
+plot_laa = True
+title_string = "LTLAs ranked by C19 Case Rate"
+laa_linewidth= 0.6
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 10
+transparent = False
+add_date = True
+add_background = False
+add_overlay = False
+add_title = True
+target_width  = 1080
+target_height = 1360
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data = False
+text_align_mode = 'center'
+date_font_size = 76
+title_font_size = 42
+laa_fontsize = 14
+mask_colour='#406080'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.5
+overlay_positions = []
+overlay_filenames = []
+background_file = "ltla-bg.png"
+write_pickle()
+
 #Heatmap with background image
 short_name="heatmap"
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+plot_ranks = False
 target_places = []
 colour_map='YlOrRd'
 msoa_colour_map='YlOrRd'
@@ -169,7 +586,8 @@ mask_colour='#122B49'
 add_footer = False
 restrict_laa_to_targets = False
 f_scale = 3.3
-overlay_filename = ''
+overlay_positions = []
+overlay_filenames = []
 background_file = "heatmap.png"
 write_pickle()
 
@@ -177,6 +595,11 @@ write_pickle()
 
 #MSOA Only Plot 
 short_name="msoa"
+footer_message = "Based on MSOA case data from coronavirus.data.gov.uk."
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+plot_ranks = False
 target_places = []
 colour_map='YlOrRd'
 msoa_colour_map='winter'
@@ -220,12 +643,18 @@ mask_colour='#EEEEEE'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 1.8
-overlay_filename = ''
+overlay_positions = []
+overlay_filenames = []
 background_file=''
 write_pickle()
 
 #LSOA Only Plot 
 short_name="lsoa"
+footer_message = "Based on LSOA case data from coronavirus.data.gov.uk."
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+plot_ranks = False
 target_places = []
 colour_map='YlOrRd'
 msoa_colour_map='YlOrRd'
@@ -269,12 +698,18 @@ mask_colour='#EEEEEE'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 1.8
-overlay_filename = ''
+overlay_positions = []
+overlay_filenames = []
 background_file=''
 write_pickle()
 
 #LSOA data on top of MSOA\LTLA combi Plot 
 short_name="combined"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+footer_message = "Based on LTLA, MSOA and LSOA data from coronavirus.data.gov.uk."
+plot_ranks = False
 target_places = []
 colour_map='Oranges'
 msoa_colour_map='YlOrRd'
@@ -318,13 +753,19 @@ mask_colour='#EEEEEE'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 2
-overlay_filename = ''
+overlay_positions = []
+overlay_filenames = []
 background_file=''
 write_pickle()
 
 #East England
 short_name="east"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
 target_places = []
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_ranks = False
 colour_map='YlOrRd'
 msoa_colour_map='YlOrRd'
 lsoa_colour_map='YlOrRd'
@@ -352,8 +793,8 @@ add_background = False
 add_overlay = False
 add_title = True
 target_width  = 1080
-target_height = 1353
-plot_laa_names=False
+target_height = 1354
+plot_laa_names=True
 plot_laa_values=True
 plot_ltla_data = False
 plot_msoa_data = False
@@ -362,19 +803,25 @@ plot_combined_data = True
 text_align_mode = 'right'
 date_font_size = 80
 title_font_size = 60
-laa_fontsize = 18
+laa_fontsize = 20
 mask_colour='#122B49'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 2.67
-overlay_filename=''
+overlay_positions = []
+overlay_filenames=[]
 background_file=''
 write_pickle()
 
 
 #South East England
 short_name="southeast"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
 target_places = []
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_ranks = False
 colour_map='YlOrRd'
 msoa_colour_map='YlOrRd'
 lsoa_colour_map='YlOrRd'
@@ -401,9 +848,9 @@ add_date = True
 add_background = False
 add_overlay = False
 add_title = True
-target_width  = 1615
+target_width  = 1616
 target_height = 1080
-plot_laa_names=False
+plot_laa_names=True
 plot_laa_values=True
 plot_ltla_data = False
 plot_msoa_data = False
@@ -412,18 +859,81 @@ plot_combined_data = True
 text_align_mode = 'right'
 date_font_size = 80
 title_font_size = 60
-laa_fontsize = 14
+laa_fontsize = 16
 mask_colour='#122B49'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 2.5
-overlay_filename=''
+overlay_positions = []
+overlay_filenames=[]
+background_file=''
+write_pickle()
+
+
+
+#Greater London Area
+short_name="london"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+target_places = []
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_ranks = False
+colour_map='YlOrRd'
+msoa_colour_map='YlOrRd'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=1
+frame_margins = [500000,560000,160000,200000]
+label_x=502000
+label_y=192000
+title_x=502000
+title_y=195000
+plot_msoa_boundaries=True
+plot_wales=False
+plot_scotland=False
+plot_towns=True
+plot_laa = True
+title_string = "Heatmap for London"
+laa_linewidth= 2
+standalone_plot = True
+post_process = True
+resize_output = False
+heat_lim = 8
+transparent = False
+add_date = True
+add_background = False
+add_overlay = False
+add_title = True
+target_width  = 1616
+target_height = 1080
+plot_laa_names=True
+plot_laa_values=True
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data = True
+text_align_mode = 'left'
+date_font_size = 80
+title_font_size = 60
+laa_fontsize = 20
+mask_colour='#122B49'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.4
+overlay_positions = []
+overlay_filenames=[]
 background_file=''
 write_pickle()
 
 #Midlands
 short_name="midlands"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
 target_places = []
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_ranks = False
 colour_map='YlOrRd'
 msoa_colour_map='YlOrRd'
 lsoa_colour_map='YlOrRd'
@@ -461,19 +971,25 @@ plot_combined_data = True
 text_align_mode = 'left'
 date_font_size = 80
 title_font_size = 60
-laa_fontsize = 20
+laa_fontsize = 22
 mask_colour='#DDDDDD'
 add_footer = True
 restrict_laa_to_targets = False
-f_scale = 2.4
-overlay_filename=''
+f_scale = 2.3
+overlay_positions = []
+overlay_filenames=[]
 background_file=''
 write_pickle()
 
 
 #Yorkshire+Humber Region
 short_name="yorkshire"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
 target_places = []
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_ranks = False
 colour_map='YlOrRd'
 msoa_colour_map='YlOrRd'
 lsoa_colour_map='YlOrRd'
@@ -493,16 +1009,16 @@ title_string = "Heatmap for Yorkshire and Humber"
 laa_linewidth= 2
 standalone_plot = True
 post_process = True
-resize_output = False
+resize_output = True
 heat_lim = 8
 transparent = False
 add_date = True
 add_background = False
 add_overlay = False
 add_title = True
-target_width  = 1308
+target_width  = 1594
 target_height = 1080
-plot_laa_names=False
+plot_laa_names=True
 plot_laa_values=True
 plot_ltla_data = False
 plot_msoa_data = False
@@ -516,14 +1032,20 @@ mask_colour='#DDDDDD'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 2.4
-overlay_filename=''
+overlay_positions = []
+overlay_filename=[]
 background_file=''
 write_pickle()
 
 
 #South West England
 short_name="southwest"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
 target_places = []
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_ranks = False
 colour_map='YlOrRd'
 msoa_colour_map='YlOrRd'
 lsoa_colour_map='YlOrRd'
@@ -552,7 +1074,7 @@ add_overlay = False
 add_title = True
 target_width  = 1474
 target_height = 1080
-plot_laa_names=False
+plot_laa_names=True
 plot_laa_values=True
 plot_ltla_data = False
 plot_msoa_data = False
@@ -561,18 +1083,24 @@ plot_combined_data = True
 text_align_mode = 'left'
 date_font_size = 80
 title_font_size = 60
-laa_fontsize = 14
+laa_fontsize = 20
 mask_colour='#122B49'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 2.5
-overlay_filename=''
+overlay_positions = []
+overlay_filenames=[]
 background_file=''
 write_pickle()
 
 #North East England
 short_name="northeast"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
 target_places = []
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_ranks = False
 colour_map='YlOrRd'
 msoa_colour_map='YlOrRd'
 lsoa_colour_map='YlOrRd'
@@ -600,7 +1128,7 @@ add_background = False
 add_overlay = False
 add_title = True
 target_width  = 1080
-target_height = 1369
+target_height = 1370
 plot_laa_names=True
 plot_laa_values=True
 plot_ltla_data = False
@@ -615,13 +1143,19 @@ mask_colour='#DDDDDD'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 2.3
-overlay_filename=''
+overlay_filenames=[]
+overlay_positions = []
 background_file=''
 write_pickle()
 
 #North West England
 short_name="northwest"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
 target_places = []
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_ranks = False
 colour_map='YlOrRd'
 msoa_colour_map='YlOrRd'
 lsoa_colour_map='YlOrRd'
@@ -664,7 +1198,8 @@ mask_colour='#DDDDDD'
 add_footer = True
 restrict_laa_to_targets = False
 f_scale = 3.1
-overlay_filename=''
+overlay_filenames=[]
+overlay_positions = []
 background_file=''
 write_pickle()
 
@@ -675,6 +1210,11 @@ write_pickle()
 
 #North Yorkshire
 short_name="northyorkshire"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_ranks = False
 frame_margins = [360000,520000,412000,520000]
 target_places = ['Craven','Harrogate','Richmondshire','Hambleton','Ryedale','Scarborough','York','Selby']
 colour_map='Greens'
@@ -719,13 +1259,19 @@ mask_colour='#122B49'
 add_footer = False
 restrict_laa_to_targets = True
 f_scale = 2.5
-overlay_filename='graphics/overlay-nyorks.png'
+overlay_filenames=['graphics/overlay-nyorks.png']
+overlay_positions = [[0,0]]
 background_file=''
 write_pickle()
 
 
 #North Yorkshire
 short_name="nyorks-lsoa"
+plot_classified_ltla = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+footer_message = "Based on LTLA, MSOA and LSOA data from coronavirus.data.gov.uk."
+plot_ranks = False
 frame_margins = [360000,520000,412000,520000]
 target_places = ['Craven','Harrogate','Richmondshire','Hambleton','Ryedale','Scarborough','York','Selby']
 colour_map='BuGn'
@@ -773,6 +1319,7 @@ mask_colour='#122B49'
 add_footer = False
 restrict_laa_to_targets = True
 f_scale = 2.5
-overlay_filename='graphics/overlay-nyorks.png'
+overlay_filenames=['graphics/overlay-nyorks.png']
+overlay_positions = []
 background_file=''
 write_pickle()

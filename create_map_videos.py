@@ -11,14 +11,14 @@ from datetime import datetime, timedelta
 
 start_date = datetime(2020,3,1)
 end_date = datetime(2020,10,6)
-framerate = 7
+framerate = 4
 holdtime = 1
 
 def get_date(filename):
     return datetime.strptime(os.path.splitext(os.path.basename(filename))[0],"map-%Y%m%d")
 
 
-plots_path = "plots"
+plots_path = "30day/output-20201009"
 output_path = "videos"
 if not os.path.exists(output_path): os.mkdir(output_path)
 subfolders = glob.glob(plots_path + os.path.sep + "*")

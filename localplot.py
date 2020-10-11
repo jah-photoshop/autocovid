@@ -232,7 +232,7 @@ add_overlay = False
 add_title = True
 target_width  = 1440
 target_height = 1080
-plot_laa_names=False
+plot_laa_names=True
 plot_laa_values=True
 plot_combined_data = True
 text_align_mode = 'left'
@@ -244,7 +244,6 @@ add_footer = True
 restrict_laa_to_targets = False
 
 
-y_step = (frame_margins[3] - frame_margins[2]) / 2000.0
 
 #Load map data for England [and Wales] from shape file
 print("Loading MSOA map data from " + map_filename)
@@ -389,7 +388,7 @@ for day in range(def_days,number_of_days):
                 yy_shift = 0
                 if plot_laa_names: 
                     yy_shift = y_step * laa_fontsize
-                    plt.text(laa_centroids[count][0],laa_centroids[count][1]+y_shift+yy_shift,name,horizontalalignment=al_mode,fontsize=laa_fontsize*0.6,bbox=dict(boxstyle='square',color='#AAAA8877'))
+                    plt.text(laa_centroids[count][0],laa_centroids[count][1]+y_shift+yy_shift,name,horizontalalignment=al_mode,fontsize=laa_fontsize*0.6) #bbox=dict(boxstyle='square',color='#AAAA8877')
                 if plot_laa_values: plt.text(laa_centroids[count][0],laa_centroids[count][1]+y_shift-yy_shift,"%3.1f" % val,horizontalalignment=al_mode,fontsize=laa_fontsize,bbox=dict(boxstyle='square',color='#FFFFEE11'))
     if add_date: plt.text(label_x,label_y,c_date.strftime("%B %d"), horizontalalignment=text_align_mode, style='italic',fontsize=date_font_size)
     if add_title:plt.text(title_x,title_y,title_string,horizontalalignment=text_align_mode,fontsize=title_font_size)
