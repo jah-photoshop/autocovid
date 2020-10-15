@@ -15,19 +15,22 @@ print("_________________________________________________________________________
 
 import os,csv, numpy as np,geopandas as gpd,pandas as pd,scipy.stats as ss, matplotlib.pyplot as plt, random, sys, time, pickle, shutil, mapclassify as mc
 from datetime import datetime, timedelta
+from math import log
 
 #def_days = 31  #Plot since 1st March
 #def_days = 180 #Plot since start of August
 #def_days = 31
 def_days=220
-def_days=31
+#def_days=31
 
-batch_mode = False
+batch_mode = True
 batch_list = ['ltla','msoa','lsoa','default','rank','london','heatmap','nyorks-lsoa','northeast','northwest','southwest','southeast','midlands','east','yorkshire','northyorkshire']
 
 batch_list=['london-phe','london-phex','ltla-phe','ltla-phex']
-preset = 'doubling-bin'
-
+batch_list=['nyorks-bin']
+batch_list=['msoa']
+#batch_list =['relative7','relative14']
+#preset='doubling-'
 debug = False
 overwrite_mode = True           #If set to false, program will halt if output folder exists
 archive = False
@@ -62,9 +65,9 @@ else:
 print("Plots to make: %s" % (preset_list))
 
 def load_parameters(preset_name):
-    global short_name,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file
+    global short_name,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_relative,relative_days,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file
     with open(preset_path + os.path.sep + preset_name + ".pickle","rb") as f: preset_data=pickle.load(f)        
-    short_name,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file = preset_data
+    short_name,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_relative,relative_days,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file = preset_data
 
 using_lsoa_data = False
 use_manual_binning = False
@@ -134,15 +137,26 @@ print("PROCESSING DATA")
 #Calculate the case rate, for each day, for each area
 print("Calculating area data")
 laa_rates = [[0] * number_of_days ] * len(laa_names)
+relative_area_rates = []  #Store change in rates over 7 day period
 
-
-for area_code in area_codes:
+for ac, area_code in enumerate(area_codes):
     area_cases = [0] * number_of_days
     start_index = area_codes_index.index(area_code)
     area_pop = float(cases_data[start_index][5]) / float(cases_data[start_index][6])
     local_data = [[(datetime.strptime(entry[3],"%Y-%m-%d")-start_date).days,int(entry[4])] for entry in cases_data  if entry[1]==area_code ]
     for line in local_data: area_cases[line[0]]=line[1]  
     area_rate = [( sum(area_cases[max(0,i-6):i+1]) / area_pop) for i in range(number_of_days)]
+    relative_area_rate = []
+    for i in range(number_of_days):
+        if(i<relative_days): relative_area_rate.append(0)
+        else:
+            h_area_rate = area_rate[i-relative_days]
+            if h_area_rate == 0: relative_area_rate.append(0)
+            else:
+                z = area_rate[i]/h_area_rate
+                if(z == 0):relative_area_rate.append(0)
+                else: relative_area_rate.append(log(z,2))
+    relative_area_rates.append(relative_area_rate)
     if area_code in laa_ids:  
         laa_rates[laa_ids.index(area_code)]=area_rate
         if(debug):print("Area code %s recognised in LAA data (%s), Pop %f  Max rate %f" % (area_code,laa_names[laa_ids.index(area_code)],area_pop,max(area_rate)))
@@ -246,6 +260,10 @@ for day in range(number_of_days):
         ltla_rank_series = pd.Series([area_ranks[day][el] for el in ltla_indices])
         ltla_rank_series_title = c_date.strftime('rank_%m%d')
         england[ltla_rank_series_title]=ltla_rank_series
+    ltla_relative_series = pd.Series([relative_area_rates[el][day] for el in ltla_indices])
+    ltla_relative_series_title = c_date.strftime('relative_%m%d')
+    england[ltla_relative_series_title]=ltla_relative_series
+
     if(use_manual_binning):
         b_val = -0.1
         bin_totals=[]
@@ -329,8 +347,13 @@ for pre in preset_list:
         if(plot_combined_data):
             england.plot(column=c_date.strftime('comb_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=heat_lim,zorder=z)
             z+=1
+        if(plot_relative):
+            england.plot(column=c_date.strftime('relative_%m%d'),ax=ax,cmap=colour_map,vmin=-2,vmax=2,zorder=z)
+            z+=1
         if(plot_msoa_data):
-            england.plot(column=c_date.strftime('msoa_%m%d'),ax=ax,cmap=msoa_colour_map,vmin=3,vmax=30,zorder=z,alpha=msoa_alpha)
+            plot_msoa_outlines = False
+            if plot_msoa_outlines: england.plot(column=c_date.strftime('msoa_%m%d'),ax=ax,facecolor="#DDBBBB",hatch="//",zorder=z,alpha=msoa_alpha)    
+            else: england.plot(column=c_date.strftime('msoa_%m%d'),ax=ax,cmap=msoa_colour_map,vmin=3,vmax=30,zorder=z,alpha=msoa_alpha)
             z+=1
         if(plot_lsoa_data):
             lsoa_map.plot(column=c_date.strftime('lsoa_%m%d'),ax=ax,cmap=lsoa_colour_map,vmin=3,vmax=30,zorder=z,alpha=lsoa_alpha)

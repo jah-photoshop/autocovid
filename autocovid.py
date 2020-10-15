@@ -42,7 +42,7 @@ debug = False            # Set to True to print extended debug information whils
 plot_region_stats = False # Set to True to include regional statistics legend on map
 merge_plots = True
 
-surpress_days = timedelta(days=1)
+surpress_days = timedelta(days=3)
 plt.rcParams.update({'font.size': 26})
 plt.rcParams.update({'axes.linewidth': 0})
 
@@ -104,16 +104,22 @@ output_path         = input("Enter output path   [default: plots]           : ")
 bg_output_path = output_path + os.path.sep + 'backgrounds'
 if os.path.exists(bg_output_path): fail("Output path already exists (%s)" % (bg_output_path))
 #os.mkdir(output_path)
-os.mkdir(output_path + os.path.sep + 'temp')
-merged_output_path = output_path + os.path.sep + 'merged'
 
-os.mkdir(bg_output_path)
-os.mkdir(merged_output_path)
 
 cases_filename   = input("Enter data filename [default: data/england.csv]: ") or "data/england.csv"
 
 if not os.path.isfile(cases_filename): fail("Combined data file not found (%s)" % (cases_filename))
 
+heatmap_folder = input("Enter map filepath  [default: autocovid_map]: ") or "autocovid_map"
+
+if not os.path.exists(output_path + os.path.sep + heatmap_folder): fail("Heatmap image path not found (%s)" % (heatmap_folder))
+
+
+os.mkdir(output_path + os.path.sep + 'temp')
+merged_output_path = output_path + os.path.sep + 'merged'
+
+os.mkdir(bg_output_path)
+os.mkdir(merged_output_path)
 
 #Background image is merged with each output frame using convert (imagemagick)
 background_filename   = input("Background image filename [default: bg.png]    : ") or "bg.png"
@@ -231,6 +237,7 @@ for day in range(no_days):
                 post_cases.append(cases[count])
                 post_dates.append(entry)
                 post_avs.append(avs[count])
+                
         plt.axis([start_date-timedelta(hours=36),end_date-surpress_days-timedelta(hours=30),0,c_max*1.02])
         ax=plt.gca()
         pad_w= -10 - ( len("%d" % c_max) * 14)
@@ -304,6 +311,14 @@ for day in range(no_days):
             print("Annotating regional data")
             annotate_picture(frame_name,region_annotations)
     if merge_plots:
-        heatmap_file = output_path + os.path.sep + 'maps' + os.path.sep + c_day.strftime("map-%Y%m%d.png")
+        heatmap_file = output_path + os.path.sep + heatmap_folder + os.path.sep + c_day.strftime("map-%Y%m%d.png")
         merged_file = merged_output_path + os.path.sep + c_day.strftime("merged-%Y%m%d.png")
         os.system('composite -geometry +1045+10 %s %s %s' % (heatmap_file,frame_name,merged_file))
+        
+        #Add London overlay and key
+        london_overlay_folder = 'autocovid_london'
+        london_file = output_path + os.path.sep + london_overlay_folder + os.path.sep + c_day.strftime("map-%Y%m%d.png")
+        os.system('composite -geometry +1627+17 %s %s %s' % (london_file,merged_file,merged_file))
+        
+        legend_file = 'autocovid_key.png'
+        os.system('composite -geometry +1096+456 %s %s %s' % (legend_file,merged_file,merged_file))

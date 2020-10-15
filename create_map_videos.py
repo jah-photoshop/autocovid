@@ -38,8 +38,7 @@ for folder in subfolders:
 #
 #lsoa_path = "plots/lsoa"
 #
-#
-#background_files = glob.glob(background_path + os.path.sep + "*.png")
+##background_files = glob.glob(background_path + os.path.sep + "*.png")
 #lsoa_files = glob.glob(lsoa_path + os.path.sep + "*.png")
 #background_files.sort()
 #lsoa_files.sort()
