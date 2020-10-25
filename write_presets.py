@@ -16,7 +16,7 @@ if(not os.path.isdir(preset_folder)): os.makedirs(preset_folder)
 
 
 def write_pickle():
-    d_list=[short_name,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_relative,relative_days,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,
+    d_list=[short_name,sqrt_rates,plot_risk_weighted_ltla,plot_risk_weighted_ltla_binned,ltla_vmax,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_relative,relative_days,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,
             plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,
             heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,
             target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,
@@ -24,12 +24,14 @@ def write_pickle():
     with open(preset_folder+os.path.sep+short_name+".pickle","wb") as f: pickle.dump(d_list,f)        
 
 
-
+sqrt_rates = False
 
 #Default (England, combined data, with background)
 short_name="default"
 footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 plot_ranks = False
@@ -80,12 +82,15 @@ restrict_laa_to_targets = False
 f_scale = 3.3
 overlay_filenames = []
 overlay_positions = []
+ltla_vmax = 200
 write_pickle()
 
 #LTLA Heatmap - based on PHE England maps
 short_name="london-phe"
 footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [0.1,5,10,15,30,45,10000]
 plot_ranks = False
@@ -143,6 +148,8 @@ write_pickle()
 short_name="ltla-phe"
 footer_message = ""
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [0.1,5,10,15,30,45,10000]
 plot_ranks = False
@@ -203,6 +210,8 @@ write_pickle()
 short_name="london-phex"
 footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [0.1,5,10,15,30,45,90,180,360,10000]
 plot_ranks = False
@@ -261,6 +270,8 @@ write_pickle()
 short_name="doubling-london"
 footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [1,2,4,8,16,32,64,128,256,10000]
 plot_ranks = False
@@ -320,6 +331,8 @@ write_pickle()
 short_name="doubling-london-big"
 footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [1,2,4,8,16,32,64,128,256,10000]
 plot_ranks = False
@@ -377,6 +390,8 @@ write_pickle()
 short_name="autocovid_london"
 footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [1,2,4,8,16,32,64,128,256,10000]
 plot_ranks = False
@@ -436,6 +451,8 @@ write_pickle()
 short_name="autocovid_map"
 footer_message = ""
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [1,2,4,8,16,32,64,128,256,10000]
 plot_ranks = False
@@ -494,6 +511,8 @@ write_pickle()
 short_name="doubling-bin"
 footer_message = ""
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [1,2,4,8,16,32,64,128,256,10000]
 plot_ranks = False
@@ -552,6 +571,8 @@ write_pickle()
 short_name="ltla-phex"
 footer_message = ""
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [0.1,5,10,15,30,45,90,180,360,10000]
 plot_ranks = False
@@ -610,6 +631,8 @@ write_pickle()
 short_name="ltla-q"
 footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [0.1,5,10,15,30,45,10000]
 plot_ranks = False
@@ -677,6 +700,8 @@ write_pickle()
 short_name="ltla"
 footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 plot_ranks = False
@@ -735,6 +760,8 @@ write_pickle()
 short_name="rank"
 footer_message = "Based on average case rate from LTLA case data @ coronavirus.data.gov.uk."
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 plot_ranks = True
@@ -792,6 +819,8 @@ write_pickle()
 short_name="heatmap"
 footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 plot_ranks = False
@@ -851,6 +880,8 @@ write_pickle()
 short_name="relative7"
 footer_message = "Compares daily case rate in a given LTLA with same value 7 days earlier.  Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 plot_ranks = False
@@ -908,6 +939,8 @@ write_pickle()
 short_name="relative14"
 footer_message = "Compares daily case rate in a given LTLA with same value 14 days earlier.  Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 plot_ranks = False
@@ -966,6 +999,8 @@ write_pickle()
 short_name="relative28"
 footer_message = "Compares daily case rate in a given LTLA with same value 28 days earlier.  Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 plot_ranks = False
@@ -1024,6 +1059,8 @@ write_pickle()
 short_name="msoa"
 footer_message = "Based on MSOA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 plot_ranks = False
@@ -1080,6 +1117,8 @@ write_pickle()
 short_name="lsoa"
 footer_message = "Based on LSOA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 plot_ranks = False
@@ -1135,6 +1174,8 @@ write_pickle()
 #LSOA data on top of MSOA\LTLA combi Plot 
 short_name="combined"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 footer_message = "Based on LTLA, MSOA and LSOA data from coronavirus.data.gov.uk."
@@ -1191,6 +1232,8 @@ write_pickle()
 #East England
 short_name="east"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 target_places = []
@@ -1248,6 +1291,8 @@ write_pickle()
 #South East England
 short_name="southeast"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 target_places = []
@@ -1306,6 +1351,8 @@ write_pickle()
 #Greater London Area
 short_name="london"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 target_places = []
@@ -1362,6 +1409,8 @@ write_pickle()
 #Midlands
 short_name="midlands"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 target_places = []
@@ -1419,6 +1468,8 @@ write_pickle()
 #Yorkshire+Humber Region
 short_name="yorkshire"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 target_places = []
@@ -1476,6 +1527,8 @@ write_pickle()
 #South West England
 short_name="southwest"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 target_places = []
@@ -1532,6 +1585,8 @@ write_pickle()
 #North East England
 short_name="northeast"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 target_places = []
@@ -1588,6 +1643,8 @@ write_pickle()
 #North West England
 short_name="northwest"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 target_places = []
@@ -1649,6 +1706,8 @@ write_pickle()
 #North Yorkshire
 short_name="northyorkshire"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
@@ -1707,6 +1766,8 @@ write_pickle()
 #North Yorkshire
 short_name="nyorks-lsoa"
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 footer_message = "Based on LTLA, MSOA and LSOA data from coronavirus.data.gov.uk."
@@ -1775,6 +1836,8 @@ write_pickle()
 short_name="doubling-kent"
 footer_message = ""
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [1,2,4,8,16,32,64,128,256,10000]
 plot_ranks = False
@@ -1832,6 +1895,8 @@ write_pickle()
 short_name="doubling-surrey"
 footer_message = ""
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [1,2,4,8,16,32,64,128,256,10000]
 plot_ranks = False
@@ -1891,6 +1956,8 @@ write_pickle()
 #North Yorkshire
 short_name="nyorks-bin"
 plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = 'manual'
 ltla_classifier_bins = [1,2,4,8,16,32,64,128,256,10000]
 footer_message = "Based on LTLA and MSOA data from coronavirus.data.gov.uk."
@@ -1953,6 +2020,8 @@ write_pickle()
 short_name="relative19"
 footer_message = "Comparison of case rate on 09/10/2020 with 20/09/2020.  Based on LTLA case data from coronavirus.data.gov.uk."
 plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
 ltla_classifier_mode = None
 ltla_classifier_bins = None
 plot_ranks = False
@@ -2003,5 +2072,327 @@ restrict_laa_to_targets = False
 f_scale = 2.6
 overlay_positions = [[32,340]]
 overlay_filenames = ['relative_key.png']
+background_file=''
+write_pickle()
+
+
+
+
+#Risk Weighted
+short_name="age-risk-unweighted"
+footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
+#footer_message = "Based on comparison of LTLA age distribution to national average weighted with C19 fatality statistics.  Data from ONS and PHE."
+plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+plot_ranks = False
+plot_relative = False
+relative_days = 7
+target_places = []
+colour_map='PuRd'
+colour_map='jet'
+msoa_colour_map='winter'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [133000,658000,10600,655000]
+label_x=654000
+label_y=576000
+title_x=654000
+title_y=605000
+plot_msoa_boundaries=True
+plot_wales=True
+plot_scotland=True
+plot_towns=False
+plot_laa = True
+title_string = "Unweighted Heatmap"
+#title_string = "Weighted risk of C19 death in LTLA due to age demographics"
+laa_linewidth= 0.6
+sqrt_rates = True
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 320
+ltla_vmax = 20
+transparent = False
+add_date = True
+add_background = False
+add_overlay = True
+add_title = True
+target_width  = 1080
+target_height = 1324
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = True
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data =  False
+text_align_mode = 'right'
+date_font_size = 70
+title_font_size = 44
+laa_fontsize = 14
+mask_colour='#EEEEEE'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.5
+overlay_positions = [[32,390]]
+overlay_filenames = ['sqr-key.png']
+background_file=''
+write_pickle()
+
+
+#Risk Weighted
+short_name="age-risk"
+footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
+#footer_message = "Based on comparison of LTLA age distribution to national average weighted with C19 fatality statistics.  Data from ONS and PHE."
+plot_classified_ltla = False
+plot_risk_weighted_ltla = True
+plot_risk_weighted_ltla_binned = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+plot_ranks = False
+plot_relative = False
+relative_days = 7
+target_places = []
+colour_map='PuRd'
+colour_map='jet'
+msoa_colour_map='winter'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [133000,658000,10600,655000]
+label_x=654000
+label_y=576000
+title_x=654000
+title_y=605000
+plot_msoa_boundaries=True
+plot_wales=True
+plot_scotland=True
+plot_towns=False
+plot_laa = True
+title_string = "Weighted Age-Risk Heatmap"
+#title_string = "Weighted risk of C19 death in LTLA due to age demographics"
+laa_linewidth= 0.6
+sqrt_rates = True
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 320
+ltla_vmax = 20
+transparent = False
+add_date = True
+add_background = False
+add_overlay = True
+add_title = True
+target_width  = 1080
+target_height = 1324
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data =  False
+text_align_mode = 'right'
+date_font_size = 70
+title_font_size = 44
+laa_fontsize = 14
+mask_colour='#EEEEEE'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.5
+overlay_positions = []
+overlay_filenames = []
+background_file=''
+write_pickle()
+
+
+#Risk Weighted
+short_name="age-risk-unweighted-bin"
+footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
+#footer_message = "Based on comparison of LTLA age distribution to national average weighted with C19 fatality statistics.  Data from ONS and PHE."
+plot_classified_ltla = True
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
+ltla_classifier_mode = 'manual'
+ltla_classifier_bins = [0.1,5,10,15,30,45,90,180,360,10000]
+sqrt_rates = False
+plot_ranks = False
+plot_relative = False
+relative_days = 7
+target_places = []
+colour_map='jet'
+msoa_colour_map='winter'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [133000,658000,10600,655000]
+label_x=654000
+label_y=576000
+title_x=654000
+title_y=605000
+plot_msoa_boundaries=True
+plot_wales=True
+plot_scotland=True
+plot_towns=False
+plot_laa = True
+title_string = "Unweighted Heatmap"
+#title_string = "Weighted risk of C19 death in LTLA due to age demographics"
+laa_linewidth= 0.6
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 320
+ltla_vmax = 400
+transparent = False
+add_date = True
+add_background = False
+add_overlay = True
+add_title = True
+target_width  = 1080
+target_height = 1324
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = True
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data =  False
+text_align_mode = 'right'
+date_font_size = 70
+title_font_size = 44
+laa_fontsize = 14
+mask_colour='#EEEEEE'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.5
+overlay_positions = [[32,390]]
+overlay_filenames = ['risk-factor-key.png']
+background_file=''
+write_pickle()
+
+
+#Risk Weighted
+short_name="age-risk-bin"
+footer_message = "Based on LTLA case data from coronavirus.data.gov.uk."
+#footer_message = "Based on comparison of LTLA age distribution to national average weighted with C19 fatality statistics.  Data from ONS and PHE."
+plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = True
+ltla_classifier_mode = 'manual'
+ltla_classifier_bins = [0.1,5,10,15,30,45,90,180,360,10000]
+sqrt_rates = False
+plot_ranks = False
+plot_relative = False
+relative_days = 7
+target_places = []
+colour_map='jet'
+msoa_colour_map='winter'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=0.4
+frame_margins = [133000,658000,10600,655000]
+label_x=654000
+label_y=576000
+title_x=654000
+title_y=605000
+plot_msoa_boundaries=True
+plot_wales=True
+plot_scotland=True
+plot_towns=False
+plot_laa = True
+title_string = "Weighted Age-Risk Heatmap"
+#title_string = "Weighted risk of C19 death in LTLA due to age demographics"
+laa_linewidth= 0.6
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 320
+ltla_vmax = 400
+transparent = False
+add_date = True
+add_background = False
+add_overlay = True
+add_title = True
+target_width  = 1080
+target_height = 1324
+plot_laa_names=False
+plot_laa_values=False
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data =  False
+text_align_mode = 'right'
+date_font_size = 70
+title_font_size = 44
+laa_fontsize = 14
+mask_colour='#EEEEEE'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.5
+overlay_positions = []
+overlay_filenames = []
+background_file=''
+write_pickle()
+
+
+
+
+
+#Norfolk
+short_name="norfolk"
+plot_classified_ltla = False
+plot_risk_weighted_ltla = False
+plot_risk_weighted_ltla_binned = False
+ltla_classifier_mode = None
+ltla_classifier_bins = None
+target_places = []
+footer_message = "Based on LTLA and MSOA case data from coronavirus.data.gov.uk."
+plot_ranks = False
+plot_relative = False
+colour_map='Purples'
+msoa_colour_map='YlOrRd'
+lsoa_colour_map='YlOrRd'
+msoa_alpha=1
+lsoa_alpha=1
+frame_margins = [559000,659000,252000,352000]
+label_x=655000
+label_y=342000
+title_x=655000
+title_y=347000
+plot_msoa_boundaries=True
+plot_wales=False
+plot_scotland=False
+plot_towns=True
+plot_laa = True
+title_string = "C-19 Case Rate Heatmap for Norfolk Area"
+laa_linewidth= 2
+standalone_plot = True
+post_process = True
+resize_output = True
+heat_lim = 6
+transparent = False
+add_date = True
+add_background = False
+add_overlay = False
+add_title = True
+target_width  = 1080
+target_height = 1080
+plot_laa_names=True
+plot_laa_values=True
+plot_ltla_data = False
+plot_msoa_data = False
+plot_lsoa_data = False
+plot_combined_data = True
+text_align_mode = 'right'
+date_font_size = 80
+title_font_size = 60
+laa_fontsize = 32
+mask_colour='#122B49'
+add_footer = True
+restrict_laa_to_targets = False
+f_scale = 2.3
+overlay_positions = []
+overlay_filenames=[]
 background_file=''
 write_pickle()

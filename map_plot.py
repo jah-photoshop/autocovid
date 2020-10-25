@@ -19,17 +19,24 @@ from math import log
 
 #def_days = 31  #Plot since 1st March
 #def_days = 180 #Plot since start of August
-#def_days = 31
-def_days=220
-#def_days=31
+def_days = 31
+#def_days=100
+#def_dayage
 
 batch_mode = True
 batch_list = ['ltla','msoa','lsoa','default','rank','london','heatmap','nyorks-lsoa','northeast','northwest','southwest','southeast','midlands','east','yorkshire','northyorkshire']
 
 batch_list=['london-phe','london-phex','ltla-phe','ltla-phex']
 batch_list=['nyorks-bin']
+batch_list=['age-risk','age-risk-unweighted']
+batch_list=['norfolk']
+batch_list =['doubling-bin']
+batch_list=['doubling-bin']
 batch_list=['msoa']
-#batch_list =['relative7','relative14']
+
+
+batch_list=['doubling-london','doubling-bin']
+batch_list=['rank']
 #preset='doubling-'
 debug = False
 overwrite_mode = True           #If set to false, program will halt if output folder exists
@@ -38,10 +45,10 @@ data_path = "data"
 preset_path = "presets"
 output_path = "plots"
 archive_path = datetime.now().strftime("/home/robotlab/jah-photoshop-googledrive/output-%Y%m%d/")
+preset = 'default'
 
 #ltla_vmax=200
 
-ltla_vmax = 80
 if(os.path.isdir(output_path)):
     if not overwrite_mode:
         print("Output path %s already exists; aborting" % (output_path))
@@ -51,12 +58,25 @@ map_filename = "zip://" + data_path + os.path.sep + "Middle_Layer_Super_Output_A
 laa_map_filename = "zip://" + data_path + os.path.sep + "Local_Authority_Districts__May_2020__Boundaries_UK_BGC-shp.zip"
 lsoa_map_filename = "zip://" + data_path + os.path.sep + "Lower_Layer_Super_Output_Areas__December_2011__Boundaries_EW_BGC_v3-shp.zip"
 town_map_filename = "zip://" + data_path + os.path.sep + "Major_Towns_and_Cities__December_2015__Boundaries-shp.zip"
+electoral_map_filename = "zip://" + data_path + os.path.sep + "Westminster_Parliamentary_Constituencies__December_2019__Boundaries_UK_BGC-shp.zip"
+
 msoa_filename = data_path + os.path.sep + "msoa.csv"
 lsoa_filename = data_path + os.path.sep + "lsoa.csv"
 cases_filename = data_path + os.path.sep + "casedata.csv"
+laa_risk_filename = data_path + os.path.sep + "age_risk_index.csv"
 plt.rcParams['axes.facecolor']='#121240'
 
+plot_electoral_boundaries = False
 
+const_list = ['Broadland','North Norfolk','North West Norfolk','Mid Norfolk','Norwich North','Sleaford and North Hykeham',
+              'North Herefordshire','Ashford','Dudley North','Devizes','North Cornwall','Central Suffolk and North Ipswich',
+              'Ipswich','South Cambridgeshire','North Devon','Truto and Falmouth','Yeovil','South East Cornwall',
+              'Newton Abbot','St Austell and Newquay'] 
+const_names = [['Jerome','Mayhew'],['Duncan','Baker'],['James','Wild'],['George','Freeman'],['Chloe','Smith'],['Caroline','Johnson'],
+               ['Bill','Wiggin'],['Damian','Green'],['Marco','Longhi'],['Danny','Kruger'],['Scott','Mann'],['Dan','Poulter'],
+               ['Tom','Hunt'],['Anthony','Browne'],['Selaine','Saxby'],['Cherilyn','Mackrory'],['Marcus','Fysh'],['Sheryl','Murray'],
+               ['Anne-Marie','Morris'],['Steve','Double']
+            ] 
 if(batch_mode):
     print("RUNNING IN BATCH MODE")
     preset_list = batch_list
@@ -65,15 +85,18 @@ else:
 print("Plots to make: %s" % (preset_list))
 
 def load_parameters(preset_name):
-    global short_name,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_relative,relative_days,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file
+    global short_name,sqrt_rates,plot_risk_weighted_ltla,plot_risk_weighted_ltla_binned,ltla_vmax,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_relative,relative_days,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file
     with open(preset_path + os.path.sep + preset_name + ".pickle","rb") as f: preset_data=pickle.load(f)        
-    short_name,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_relative,relative_days,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file = preset_data
+    short_name,sqrt_rates,plot_risk_weighted_ltla,plot_risk_weighted_ltla_binned,ltla_vmax,plot_classified_ltla,ltla_classifier_mode,ltla_classifier_bins,footer_message,plot_ranks,plot_relative,relative_days,plot_msoa_boundaries,target_places,colour_map,msoa_colour_map,lsoa_colour_map,msoa_alpha,lsoa_alpha,frame_margins,label_x,label_y,title_x,title_y,plot_wales,plot_scotland,plot_towns,plot_laa,title_string,laa_linewidth,standalone_plot,post_process,resize_output,heat_lim,transparent,add_date,add_background,add_overlay,add_title,target_width,target_height,plot_laa_names,plot_laa_values,plot_ltla_data,plot_msoa_data,plot_lsoa_data,plot_combined_data,text_align_mode,date_font_size,title_font_size,laa_fontsize,mask_colour,add_footer,restrict_laa_to_targets,f_scale,overlay_filenames,overlay_positions,background_file = preset_data
 
 using_lsoa_data = False
 use_manual_binning = False
+risk_weighted = False
+
 for plot in preset_list:
     load_parameters(plot)
     if plot_lsoa_data: using_lsoa_data = True
+    if plot_risk_weighted_ltla: risk_weighted = True 
     if plot_classified_ltla:
         if ltla_classifier_mode == 'manual':
             use_manual_binning = True
@@ -106,6 +129,11 @@ towns=gpd.read_file(town_map_filename)
 towns['centroids']=towns.centroid
 towns=towns.set_geometry('centroids')
 
+if(plot_electoral_boundaries):
+    print("Loading electoral map data from " + electoral_map_filename)
+    all_constituencies = gpd.read_file(electoral_map_filename)
+    constituencies = all_constituencies.loc[all_constituencies['pcon19nm'].isin(const_list)]
+
 print("________________________________________________________________________________")
 print("LOADING CASE DATA")
 #Load MSOA weekly case data from CSV file
@@ -131,6 +159,20 @@ file_date=datetime.strptime(time.ctime(os.path.getctime(cases_filename)),"%c")
 file_age=(datetime.today()-file_date).days
 if file_age > 0 : print ("Warning: The cases file is %d days old..." % (file_age))
 
+if(risk_weighted):
+    print("Loading risk weightings from " + laa_risk_filename)
+    with open(laa_risk_filename) as risk_file: weightings_data = [row for row in csv.reader(risk_file, delimiter=',')]
+    rw_indices = [w[0] for w in weightings_data]
+    rw_values = [float(w[2]) for w in weightings_data]
+    area_weights = []
+    for ac in area_codes:
+            if ac not in rw_indices:
+                print("Warning: %s not found in weightings data" % ac)
+            #    area_weights.append(0.0) #replace with 1.0
+            #else: area_weights.append(log(rw_values[rw_indices.index(ac)],2)) #remove log
+                area_weights.append(1.0) #replace with 1.0
+            else: area_weights.append(rw_values[rw_indices.index(ac)]) #remove log
+        
 
 print("________________________________________________________________________________")
 print("PROCESSING DATA")        
@@ -138,6 +180,7 @@ print("PROCESSING DATA")
 print("Calculating area data")
 laa_rates = [[0] * number_of_days ] * len(laa_names)
 relative_area_rates = []  #Store change in rates over 7 day period
+weighted_area_rates = []
 
 for ac, area_code in enumerate(area_codes):
     area_cases = [0] * number_of_days
@@ -162,6 +205,9 @@ for ac, area_code in enumerate(area_codes):
         if(debug):print("Area code %s recognised in LAA data (%s), Pop %f  Max rate %f" % (area_code,laa_names[laa_ids.index(area_code)],area_pop,max(area_rate)))
     elif(debug):print("Area code %s not found in LAA data,  Pop %f  Max rate %f" % (area_code,area_pop,max(area_rate)))
     area_rates.append(area_rate)
+    if(risk_weighted):
+        weighted_area_rate = [r * area_weights[ac] for r in area_rate]
+        weighted_area_rates.append(weighted_area_rate)
 calc_ltla_rank = True    
 if(calc_ltla_rank):
     print("Calculating area ranks")
@@ -249,6 +295,7 @@ for day in range(number_of_days):
         lsoa_series_title = c_date.strftime('lsoa_%m%d')
         lsoa_map[lsoa_series_title]=lsoa_series
     ltla_series = pd.Series([np.nan if el < 0 else area_rates[el][day] for el in ltla_indices]) 
+    if sqrt_rates: ltla_series = ltla_series.pow(0.5)
     ltla_series_title = c_date.strftime('ltla_%m%d')
     england[ltla_series_title]=ltla_series
     hist_ltla_series = pd.Series([el[day] for el in hist_msoa_data])    
@@ -263,16 +310,27 @@ for day in range(number_of_days):
     ltla_relative_series = pd.Series([relative_area_rates[el][day] for el in ltla_indices])
     ltla_relative_series_title = c_date.strftime('relative_%m%d')
     england[ltla_relative_series_title]=ltla_relative_series
-
+    if(risk_weighted):
+        #ltla_risk_series = pd.Series([area_weights[el] for el in ltla_indices])
+        ltla_risk_series = pd.Series([weighted_area_rates[el][day] for el in ltla_indices])
+        if sqrt_rates: ltla_risk_series = ltla_risk_series.pow(0.5)
+        ltla_risk_series_title = c_date.strftime('risk_%m%d')
+        england[ltla_risk_series_title]=ltla_risk_series
+    
     if(use_manual_binning):
         b_val = -0.1
         bin_totals=[]
+        rw_bin_totals=[]
         for el in ltla_indices:
             bin_count = 0
+            w_bin_count = 0
             for bin_val in ltla_classifier_bins:
-                if area_rates[el][day] > bin_val: bin_count += 1 
+                if area_rates[el][day] > bin_val: bin_count += 1
+                if risk_weighted and weighted_area_rates[el][day] > bin_val: w_bin_count += 1
             bin_totals.append(bin_count)
+            if risk_weighted: rw_bin_totals.append(w_bin_count)
         england[c_date.strftime('bin_%m%d')]=pd.Series(bin_totals)
+        if risk_weighted: england[c_date.strftime('rwbin_%m%d')]=pd.Series(rw_bin_totals)
 #        for count,cbin in enumerate(ltla_classifier_bins):
 #            bin_series_title=('bin%02d' % count) + c_date.strftime('%m%d')
 #            bin_series = pd.Series([np.nan if area_rates[el][day] < b_val or area_rates[el][day]>=cbin else 1 for el in ltla_indices])
@@ -284,6 +342,10 @@ print("PRODUCING PLOTS")
 
 print("Plotting %d days of data [%s to %s]" % (number_of_days-def_days, (start_date + timedelta(days=def_days)).strftime("%d/%m/%Y"), (start_date + timedelta(days=number_of_days - 1)).strftime("%d/%m/%Y") ))
 print("________________________________________________________________________________")
+
+
+
+
 
 #fig,ax = plt.subplots(figsize=(36,36),frameon=not transparent)
 #fig=plt.figure(figsize=(36,36),frameon=not transparent)
@@ -339,16 +401,23 @@ for pre in preset_list:
                 #Classify the relevant data using mapclassify
                 classified = mc.UserDefined(england.get(c_date.strftime('ltla_%m%d')),ltla_classifier_bins)
                 classified.plot(england,ax=ax,cmap=colour_map,border_width=0.1,border_color='#EEEEEE22',legend=True,legend_kwds={'loc':'center left'})            
+        if(plot_risk_weighted_ltla_binned):
+                england.plot(column=c_date.strftime('rwbin_%m%d'),ax=ax,vmin=0,vmax=len(ltla_classifier_bins)-1,cmap=colour_map,zorder=z)
+                z+=1
         if(plot_ranks):
 #            england.plot(column=c_date.strftime('rank_%m%d'),ax=ax,cmap=colour_map,vmin=0.0,vmax=1.0,zorder=z)
             #q_scheme=mc.Quantiles(england.get(c_date.strftime('rank_%m%d')),k=4)
-            england.plot(column=c_date.strftime('rank_%m%d'),ax=ax,cmap=colour_map,zorder=z,scheme='quantiles')#vmin=0.0,vmax=1.0,
+            #england.plot(column=c_date.strftime('rank_%m%d'),ax=ax,cmap=colour_map,zorder=z,scheme='quantiles')#vmin=0.0,vmax=1.0,
+            england.plot(column=c_date.strftime('rank_%m%d'),ax=ax,cmap=colour_map,zorder=z,vmin=0.0,vmax=1.0)
             z+=1
         if(plot_combined_data):
             england.plot(column=c_date.strftime('comb_%m%d'),ax=ax,cmap=colour_map,vmin=0,vmax=heat_lim,zorder=z)
             z+=1
         if(plot_relative):
             england.plot(column=c_date.strftime('relative_%m%d'),ax=ax,cmap=colour_map,vmin=-2,vmax=2,zorder=z)
+            z+=1
+        if(plot_risk_weighted_ltla):
+            england.plot(column=c_date.strftime('risk_%m%d'),ax=ax,cmap=colour_map,vmin=0.,vmax=ltla_vmax,zorder=z)
             z+=1
         if(plot_msoa_data):
             plot_msoa_outlines = False
@@ -360,6 +429,9 @@ for pre in preset_list:
             z+=1
         if(plot_laa):
             england_laa.boundary.plot(ax=ax,zorder=z,linewidth=laa_linewidth,color='#553311')
+            z+=1
+        if(plot_electoral_boundaries):
+            constituencies.boundary.plot(ax=ax,zorder=z,linewidth=laa_linewidth*5,color='#550000')
             z+=1
         if(plot_towns):
             towns.plot(ax=ax,zorder=z,color='#111144')

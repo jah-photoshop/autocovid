@@ -2,7 +2,7 @@
 output/
 data/
 plots/
-
+nhs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
