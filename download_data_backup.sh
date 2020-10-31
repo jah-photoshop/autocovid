@@ -1,20 +1,22 @@
 #!/bin/bash
 
+set -euo pipefail
+
 echo This script attempts to download data files from the coronavirus.data.gov.uk website automatically.
 echo
 echo Making output directory: /data
-mkdir data
+mkdir -p data
 echo
 echo Downloading regional admissions data to /data/r_admissions.csv
 curl 'https://api.coronavirus.data.gov.uk/v1/data?filters=areaType=nhsRegion&structure={%22name%22:%22areaName%22,%22date%22:%22date%22,%22hospitalCases%22:%22hospitalCases%22}&format=csv'  -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Connection: keep-alive' -H 'Referer: https://coronavirus.data.gov.uk/testing' -H 'Cookie: _ga=GA1.3.1147216853.1600719838; _gid=GA1.3.561929123.1601366881; _gat_gtag_UA_161400643_2=1' -H 'Upgrade-Insecure-Requests: 1' -o data/r_admissions.csv
 echo Downloading case data to /data/casedata.csv
-curl 'https://c19downloads.azureedge.net/downloads/csv/coronavirus-cases_latest.csv' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: https://coronavirus.data.gov.uk/cases' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -o data/casedata.csv
+curl 'https://coronavirus.data.gov.uk/downloads/csv/coronavirus-cases_latest.csv' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: https://coronavirus.data.gov.uk/cases' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -o data/casedata.csv
 
 echo Downloading MSOA data to /data/msoa.csv
-curl 'https://c19downloads.azureedge.net/downloads/msoa_data/MSOAs_latest.csv' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: https://coronavirus.data.gov.uk/cases' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -o data/msoa.csv
+curl 'https://coronavirus.data.gov.uk/downloads/msoa_data/MSOAs_latest.csv' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: https://coronavirus.data.gov.uk/cases' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -o data/msoa.csv
 echo
 echo Downloading LSOA data to /data/lsoa.csv
-curl 'https://c19downloads.azureedge.net/downloads/lsoa_data/LSOAs_latest.csv' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: https://coronavirus.data.gov.uk/cases' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -o data/lsoa.csv
+curl 'https://coronavirus.data.gov.uk/downloads/lsoa_data/LSOAs_latest.csv' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: https://coronavirus.data.gov.uk/cases' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -o data/lsoa.csv
 echo
 echo Downloading testing by pillar data to /data/testing.csv
 curl 'https://api.coronavirus.data.gov.uk/v1/data?filters=areaName=United%2520Kingdom;areaType=overview&structure=%7B%22areaType%22:%22areaType%22,%22areaName%22:%22areaName%22,%22areaCode%22:%22areaCode%22,%22date%22:%22date%22,%22newPillarOneTestsByPublishDate%22:%22newPillarOneTestsByPublishDate%22,%22newPillarTwoTestsByPublishDate%22:%22newPillarTwoTestsByPublishDate%22,%22newPillarThreeTestsByPublishDate%22:%22newPillarThreeTestsByPublishDate%22,%22newPillarFourTestsByPublishDate%22:%22newPillarFourTestsByPublishDate%22,%22newTestsByPublishDate%22:%22newTestsByPublishDate%22,%22cumPillarOneTestsByPublishDate%22:%22cumPillarOneTestsByPublishDate%22,%22cumPillarTwoTestsByPublishDate%22:%22cumPillarTwoTestsByPublishDate%22,%22cumPillarThreeTestsByPublishDate%22:%22cumPillarThreeTestsByPublishDate%22,%22cumPillarFourTestsByPublishDate%22:%22cumPillarFourTestsByPublishDate%22,%22cumTestsByPublishDate%22:%22cumTestsByPublishDate%22%7D&format=csv' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Connection: keep-alive' -H 'Referer: https://coronavirus.data.gov.uk/testing' -H 'Cookie: _ga=GA1.3.1147216853.1600719838; _gid=GA1.3.561929123.1601366881; _gat_gtag_UA_161400643_2=1' -H 'Upgrade-Insecure-Requests: 1' -o data/testing.csv
