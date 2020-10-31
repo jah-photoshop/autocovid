@@ -1,0 +1,6 @@
+numpy
+geopandas
+pandas
+scipy
+matplotlib
+mapclassify
